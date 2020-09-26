@@ -640,6 +640,23 @@ export function showGlobalTrack(trackIndex: TrackIndex): ThunkAction<void> {
 }
 
 /**
+ * This action shows all tracks by resetting the state of the hidden global and local tracks
+ */
+export function showAllTracks(): ThunkAction<void> {
+  return dispatch => {
+    sendAnalytics({
+      hitType: 'event',
+      eventCategory: 'timeline',
+      eventAction: 'show all tracks',
+    });
+
+    dispatch({
+      type: 'SHOW_ALL_TRACKS',
+    });
+  };
+}
+
+/**
  * This function isolates a process global track, and leaves its local tracks visible.
  */
 export function isolateProcess(

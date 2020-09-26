@@ -7,6 +7,7 @@ import React, { PureComponent } from 'react';
 import { ContextMenu, MenuItem } from 'react-contextmenu';
 import './TrackContextMenu.css';
 import {
+  showAllTracks,
   hideGlobalTrack,
   showGlobalTrack,
   isolateProcess,
@@ -26,6 +27,7 @@ import {
   getLocalTrackNamesByPid,
   getGlobalTrackNames,
   getLocalTracksByPid,
+  getHiddenTrackCount,
 } from '../../selectors/profile';
 import {
   getGlobalTrackOrder,
@@ -44,6 +46,7 @@ import type {
   LocalTrack,
   State,
   TrackReference,
+  HiddenTrackCount,
 } from 'firefox-profiler/types';
 
 import type { ConnectedProps } from '../../utils/connect';
@@ -60,9 +63,11 @@ type StateProps = {|
   +globalTrackNames: string[],
   +localTracksByPid: Map<Pid, LocalTrack[]>,
   +localTrackNamesByPid: Map<Pid, string[]>,
+  +hiddenTrackCount: HiddenTrackCount,
 |};
 
 type DispatchProps = {|
+  +showAllTracks: typeof showAllTracks,
   +hideGlobalTrack: typeof hideGlobalTrack,
   +showGlobalTrack: typeof showGlobalTrack,
   +isolateProcess: typeof isolateProcess,
@@ -132,6 +137,11 @@ class TimelineTrackContextMenu extends PureComponent<Props> {
         hideLocalTrack(pid, trackIndex);
       }
     }
+  };
+
+  _showAllTracks = () => {
+    const { showAllTracks } = this.props;
+    showAllTracks();
   };
 
   _isolateProcess = () => {
@@ -293,6 +303,31 @@ class TimelineTrackContextMenu extends PureComponent<Props> {
       return 'Unknown Track';
     }
     return localTrackNames[rightClickedTrack.trackIndex];
+  }
+
+  renderShowAllTracks() {
+    const { rightClickedTrack, hiddenTrackCount } = this.props;
+
+    // Disable if no tracks are currently hidden
+    const isDisabled = hiddenTrackCount.hidden === 0;
+
+    // We do not need to show this option if this is a right-clicked track
+    if (rightClickedTrack !== null) {
+      return null;
+    }
+
+    return (
+      <div>
+        <MenuItem
+          preventClose={true}
+          disabled={isDisabled}
+          onClick={this._showAllTracks}
+        >
+          Show all tracks
+        </MenuItem>
+        <div className="react-contextmenu-separator" />
+      </div>
+    );
   }
 
   renderIsolateProcess() {
@@ -488,6 +523,7 @@ class TimelineTrackContextMenu extends PureComponent<Props> {
 
   render() {
     const { globalTrackOrder, globalTracks, rightClickedTrack } = this.props;
+    const showAllTracks = this.renderShowAllTracks();
     const isolateProcessMainThread = this.renderIsolateProcessMainThread();
     const isolateProcess = this.renderIsolateProcess();
     const isolateLocalTrack = this.renderIsolateLocalTrack();
@@ -509,6 +545,7 @@ class TimelineTrackContextMenu extends PureComponent<Props> {
           // The menu items header items to isolate tracks may or may not be
           // visible depending on the current state.
         }
+        {showAllTracks}
         {isolateProcessMainThread}
         {isolateProcess}
         {isolateLocalTrack}
@@ -572,8 +609,10 @@ export default explicitConnect<{||}, StateProps, DispatchProps>({
     globalTrackNames: getGlobalTrackNames(state),
     localTracksByPid: getLocalTracksByPid(state),
     localTrackNamesByPid: getLocalTrackNamesByPid(state),
+    hiddenTrackCount: getHiddenTrackCount(state),
   }),
   mapDispatchToProps: {
+    showAllTracks,
     hideGlobalTrack,
     showGlobalTrack,
     isolateProcess,

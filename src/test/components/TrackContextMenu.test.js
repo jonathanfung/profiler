@@ -340,4 +340,52 @@ describe('timeline/TrackContextMenu', function() {
       ]);
     });
   });
+
+  describe('show all tracks', function() {
+    function setupTracks({isRightClickTrack = false} = {}) {
+      const results = setup();
+      const { queryByText, dispatch, getState } = results;
+
+      const showAllTracksItem = () => queryByText(/Show all tracks/);
+
+      if (isRightClickTrack) {
+        const trackReference = {
+          type: 'global',
+          trackIndex: 1,
+        };
+        dispatch(changeRightClickedTrack(trackReference));
+      }
+
+      return {
+        dispatch,
+        getState,
+        showAllTracksItem,
+      }
+    }
+
+    it('should not appear for a right-clicked track', function() {
+      const { showAllTracksItem } = setupTracks({ isRightClickTrack: true });
+      expect(showAllTracksItem()).toBeNull();
+    });
+
+    it('should be disabled if there are no hidden tracks', function() {
+      const { showAllTracksItem } = setupTracks();
+      expect(showAllTracksItem()).toMatchSnapshot();
+    });
+
+    it('should show all tracks when clicked if there are hidden tracks', function() {
+      const { getState, showAllTracksItem } = setupTracks();
+
+      // TODO: Add logic to hide a global and local track
+
+      fireFullClick(showAllTracksItem());
+      expect(getHumanReadableTracks(getState())).toEqual([
+        // We now expect everything to be shown
+        'show [thread GeckoMain process]',
+        'show [thread GeckoMain tab] SELECTED',
+        '  - show [thread DOM Worker]',
+        '  - show [thread Style]'
+      ]);
+    });
+  });
 });

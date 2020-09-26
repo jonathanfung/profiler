@@ -331,6 +331,9 @@ const hiddenGlobalTracks: Reducer<Set<TrackIndex>> = (
       hiddenGlobalTracks.delete(action.trackIndex);
       return hiddenGlobalTracks;
     }
+    case 'SHOW_ALL_TRACKS': {
+      return new Set();
+    }
     case 'SANITIZED_PROFILE_PUBLISHED':
       // If any threads were removed, this was because they were hidden.
       // Reset this state.
@@ -360,6 +363,13 @@ const hiddenLocalTracksByPid: Reducer<Map<Pid, Set<TrackIndex>>> = (
       hiddenLocalTracks.delete(action.trackIndex);
       hiddenLocalTracksByPid.set(action.pid, hiddenLocalTracks);
       return hiddenLocalTracksByPid;
+    }
+    case 'SHOW_ALL_TRACKS': {
+      const resetHiddenTracksByPid = new Map();
+      for (const pid of state.keys()) {
+        resetHiddenTracksByPid.set(pid, new Set());
+      }
+      return resetHiddenTracksByPid;
     }
     case 'ISOLATE_PROCESS_MAIN_THREAD':
     case 'ISOLATE_LOCAL_TRACK': {

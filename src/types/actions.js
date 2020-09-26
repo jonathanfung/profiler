@@ -190,6 +190,9 @@ type ProfileAction =
       +trackIndex: TrackIndex,
     |}
   | {|
+      +type: 'SHOW_ALL_TRACKS',
+    |}
+  | {|
       // Isolate only the process track, and not the local tracks.
       +type: 'ISOLATE_PROCESS',
       +hiddenGlobalTracks: Set<TrackIndex>,
