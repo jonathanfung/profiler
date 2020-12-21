@@ -215,14 +215,3 @@ exports[`timeline/TrackContextMenu selected local track matches the snapshot of 
   </div>
 </nav>
 `;
-
-exports[`timeline/TrackContextMenu show all tracks should be disabled if there are no hidden tracks 1`] = `
-<div
-  aria-disabled="true"
-  class="react-contextmenu-item react-contextmenu-item--disabled"
-  role="menuitem"
-  tabindex="-1"
->
-  Show all tracks
-</div>
-`;

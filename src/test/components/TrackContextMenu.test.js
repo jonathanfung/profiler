@@ -342,13 +342,11 @@ describe('timeline/TrackContextMenu', function() {
   });
 
   describe('show all tracks', function() {
-    function setupTracks({isRightClickTrack = false} = {}) {
+    function setupTracks({ isRightClickTrack = false } = {}) {
       const results = setup();
-      const { queryByText, dispatch, getState } = results;
+      const { getByText, queryByText, dispatch, getState } = results;
 
-      const showAllTracksItem = () => queryByText(/Show all tracks/);
-
-      if (isRightClickTrack) {
+      if (isRightClickTrack === true) {
         const trackReference = {
           type: 'global',
           trackIndex: 1,
@@ -356,11 +354,17 @@ describe('timeline/TrackContextMenu', function() {
         dispatch(changeRightClickedTrack(trackReference));
       }
 
+      const showAllTracksItem = () => queryByText('Show all tracks');
+      const globalTrackItem = () => getByText('Content Process');
+      const localTrackItem = () => getByText('DOM Worker');
+
       return {
         dispatch,
         getState,
         showAllTracksItem,
-      }
+        globalTrackItem,
+        localTrackItem,
+      };
     }
 
     it('should not appear for a right-clicked track', function() {
@@ -368,15 +372,11 @@ describe('timeline/TrackContextMenu', function() {
       expect(showAllTracksItem()).toBeNull();
     });
 
-    it('should be disabled if there are no hidden tracks', function() {
-      const { showAllTracksItem } = setupTracks();
-      expect(showAllTracksItem()).toMatchSnapshot();
-    });
-
     it('should show all tracks when clicked if there are hidden tracks', function() {
       const { getState, showAllTracksItem } = setupTracks();
 
       // TODO: Add logic to hide a global and local track
+      // const track = getGlobalTracks(getState())[trackIndex];
 
       fireFullClick(showAllTracksItem());
       expect(getHumanReadableTracks(getState())).toEqual([
@@ -384,7 +384,7 @@ describe('timeline/TrackContextMenu', function() {
         'show [thread GeckoMain process]',
         'show [thread GeckoMain tab] SELECTED',
         '  - show [thread DOM Worker]',
-        '  - show [thread Style]'
+        '  - show [thread Style]',
       ]);
     });
   });
