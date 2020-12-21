@@ -5,31 +5,31 @@
 // @flow
 
 import * as React from 'react';
-import explicitConnect from '../../utils/connect';
-import { getView, getUrlSetupPhase } from '../../selectors/app';
+import explicitConnect from 'firefox-profiler/utils/connect';
+import { getView, getUrlSetupPhase } from 'firefox-profiler/selectors/app';
 import {
   updateUrlState,
   startFetchingProfiles,
   urlSetupDone,
   show404,
   setupInitialUrlState,
-} from '../../actions/app';
+} from 'firefox-profiler/actions/app';
 import {
   urlFromState,
   stateFromLocation,
   getIsHistoryReplaceState,
-} from '../../app-logic/url-handling';
+} from 'firefox-profiler/app-logic/url-handling';
 import {
   getProfilesFromRawUrl,
   typeof getProfilesFromRawUrl as GetProfilesFromRawUrl,
-} from '../../actions/receive-profile';
+} from 'firefox-profiler/actions/receive-profile';
 import { ProfileLoaderAnimation } from './ProfileLoaderAnimation';
-import { assertExhaustiveCheck } from '../../utils/flow';
+import { assertExhaustiveCheck } from 'firefox-profiler/utils/flow';
 
 import type {
   ConnectedProps,
   WrapFunctionInDispatch,
-} from '../../utils/connect';
+} from 'firefox-profiler/utils/connect';
 import type { UrlState, Phase, UrlSetupPhase } from 'firefox-profiler/types';
 
 type StateProps = {|
@@ -82,7 +82,7 @@ type Props = ConnectedProps<OwnProps, StateProps, DispatchProps>;
  *       view with the `UrlState` information.
  *    4. Display the profile view.
  */
-class UrlManager extends React.PureComponent<Props> {
+class UrlManagerImpl extends React.PureComponent<Props> {
   async _processInitialUrls() {
     const {
       startFetchingProfiles,
@@ -107,15 +107,8 @@ class UrlManager extends React.PureComponent<Props> {
       // case of fatal errors in the process of retrieving and processing a
       // profile. To handle the latter case properly, we won't `pushState` if
       // we're in a FATAL_ERROR state.
-      const {
-        profile,
-        shouldSetupInitialUrlState,
-      } = await getProfilesFromRawUrl(window.location);
-      if (profile !== null && shouldSetupInitialUrlState) {
-        setupInitialUrlState(window.location, profile);
-      } else {
-        urlSetupDone();
-      }
+      const profile = await getProfilesFromRawUrl(window.location);
+      setupInitialUrlState(window.location, profile);
     } catch (error) {
       // Complete the URL setup, as values can come from the user, so we should
       // still proceed with loading the app.
@@ -156,11 +149,11 @@ class UrlManager extends React.PureComponent<Props> {
     // 1. Do we move between "from-addon" and "public"?
     const movesBetweenFromAddonAndPublic =
       // from-addon -> public
-      (previousUrlState.dataSource === 'from-addon' &&
+      (['from-addon', 'unpublished'].includes(previousUrlState.dataSource) &&
         newUrlState.dataSource === 'public') ||
       // or public -> from-addon
       (previousUrlState.dataSource === 'public' &&
-        newUrlState.dataSource === 'from-addon');
+        ['from-addon', 'unpublished'].includes(newUrlState.dataSource));
 
     // 2. Do we move between 2 different hashes for a public profile
     const movesBetweenHashValues =
@@ -237,7 +230,7 @@ class UrlManager extends React.PureComponent<Props> {
   }
 }
 
-export default explicitConnect<OwnProps, StateProps, DispatchProps>({
+export const UrlManager = explicitConnect<OwnProps, StateProps, DispatchProps>({
   mapStateToProps: state => ({
     urlState: state.urlState,
     urlSetupPhase: getUrlSetupPhase(state),
@@ -251,5 +244,5 @@ export default explicitConnect<OwnProps, StateProps, DispatchProps>({
     setupInitialUrlState,
     getProfilesFromRawUrl,
   },
-  component: UrlManager,
+  component: UrlManagerImpl,
 });

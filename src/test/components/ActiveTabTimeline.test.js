@@ -6,7 +6,7 @@
 
 import * as React from 'react';
 import ReactDOM from 'react-dom';
-import Timeline from '../../components/timeline';
+import { Timeline } from '../../components/timeline';
 import ActiveTabGlobalTrack from '../../components/timeline/ActiveTabGlobalTrack';
 import ActiveTabResourcesPanel from '../../components/timeline/ActiveTabResourcesPanel';
 import ActiveTabResourceTrack from '../../components/timeline/ActiveTabResourceTrack';
@@ -24,7 +24,7 @@ import {
 } from '../../selectors/profile';
 import { getFirstSelectedThreadIndex } from '../../selectors/url-state';
 import { changeSelectedThreads } from '../../actions/profile-view';
-import { ensureExists } from '../../utils/flow';
+import { ensureExists, getFirstItemFromSet } from '../../utils/flow';
 
 describe('ActiveTabTimeline', function() {
   beforeEach(() => {
@@ -93,12 +93,13 @@ describe('ActiveTabTimeline', function() {
       if (track.type !== 'tab') {
         throw new Error('Expected a tab track.');
       }
-      const threadIndex = track.mainThreadIndex;
+      const threadIndex = ensureExists(
+        getFirstItemFromSet(track.threadIndexes),
+        'Expected a thread index for given active tab global track'
+      );
 
-      if (threadIndex !== null) {
-        // The assertions are simpler if the GeckoMain tab thread is not already selected.
-        dispatch(changeSelectedThreads(new Set([threadIndex + 1])));
-      }
+      // The assertions are simpler if the GeckoMain tab thread is not already selected.
+      dispatch(changeSelectedThreads(new Set([threadIndex + 1])));
 
       const renderResult = render(
         <Provider store={store}>
@@ -305,6 +306,8 @@ describe('ActiveTabTimeline', function() {
           container.querySelector('.timelineTrackResourceRow'),
           `Couldn't find the track resource row with selector .timelineTrackResourceRow`
         );
+      const isResourceTrackOpen = () =>
+        getResourceTrackRow().classList.contains('opened');
 
       return {
         ...renderResult,
@@ -317,6 +320,7 @@ describe('ActiveTabTimeline', function() {
         getResourceFrameTrackLabel,
         getResourceTrackRow,
         resourcePage,
+        isResourceTrackOpen,
       };
     }
 
@@ -327,8 +331,8 @@ describe('ActiveTabTimeline', function() {
       });
 
       it('has the correct track name', function() {
-        const { queryByText, resourcePage } = setup();
-        expect(queryByText(resourcePage.url)).toBeTruthy();
+        const { getByText, resourcePage } = setup();
+        expect(getByText(resourcePage.url)).toBeTruthy();
       });
 
       it('starts out not being selected', function() {
@@ -348,6 +352,34 @@ describe('ActiveTabTimeline', function() {
         expect(getFirstSelectedThreadIndex(getState())).not.toBe(threadIndex);
         fireFullClick(getResourceTrackRow());
         expect(getFirstSelectedThreadIndex(getState())).toBe(threadIndex);
+      });
+
+      it('can toggle a selected track by clicking the label', () => {
+        const {
+          getState,
+          getResourceFrameTrackLabel,
+          threadIndex,
+          isResourceTrackOpen,
+        } = setup();
+        expect(getFirstSelectedThreadIndex(getState())).not.toBe(threadIndex);
+        expect(isResourceTrackOpen()).toBe(false);
+        fireFullClick(getResourceFrameTrackLabel());
+        expect(getFirstSelectedThreadIndex(getState())).toBe(threadIndex);
+        expect(isResourceTrackOpen()).toBe(true);
+      });
+
+      it('does not toggle a selected track by clicking other part of the track except label', () => {
+        const {
+          getState,
+          getResourceTrackRow,
+          threadIndex,
+          isResourceTrackOpen,
+        } = setup();
+        expect(getFirstSelectedThreadIndex(getState())).not.toBe(threadIndex);
+        expect(isResourceTrackOpen()).toBe(false);
+        fireFullClick(getResourceTrackRow());
+        expect(getFirstSelectedThreadIndex(getState())).toBe(threadIndex);
+        expect(isResourceTrackOpen()).toBe(false);
       });
     });
   });

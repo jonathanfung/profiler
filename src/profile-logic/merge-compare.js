@@ -34,7 +34,7 @@ import {
   correlateIPCMarkers,
 } from './marker-data';
 import { UniqueStringArray } from '../utils/unique-string-array';
-import { ensureExists } from '../utils/flow';
+import { ensureExists, getFirstItemFromSet } from '../utils/flow';
 
 import type {
   Profile,
@@ -125,27 +125,39 @@ export function mergeProfilesForDiffing(
     if (selectedThreadIndexes === null) {
       throw new Error(`No thread has been selected in profile ${i}`);
     }
-    const selectedThreadIndex = selectedThreadIndexes.values().next().value;
+    const selectedThreadIndex = getFirstItemFromSet(selectedThreadIndexes);
     if (selectedThreadIndexes.size !== 1 || selectedThreadIndex === undefined) {
       throw new Error(
         'Only one thread selection is currently supported for the comparison view.'
       );
     }
     const profile = profiles[i];
-    let thread = profile.threads[selectedThreadIndex];
+    let thread = { ...profile.threads[selectedThreadIndex] };
     transformStacks[i] = profileSpecific.transforms[selectedThreadIndex];
     implementationFilters.push(profileSpecific.implementation);
 
     // We adjust the categories using the maps computed above.
     // TODO issue #2151: Also adjust subcategories.
-    thread.stackTable.category = adjustCategories(
-      thread.stackTable.category,
-      translationMapsForCategories[i]
-    );
-    thread.frameTable.category = adjustNullableCategories(
-      thread.frameTable.category,
-      translationMapsForCategories[i]
-    );
+    thread.stackTable = {
+      ...thread.stackTable,
+      category: adjustCategories(
+        thread.stackTable.category,
+        translationMapsForCategories[i]
+      ),
+    };
+    thread.frameTable = {
+      ...thread.frameTable,
+      category: adjustNullableCategories(
+        thread.frameTable.category,
+        translationMapsForCategories[i]
+      ),
+    };
+
+    //Screenshot markers is in different threads of the imported profile.
+    //These markers are extracted and merged here using the mergeScreenshotMarkers().
+
+    const { markerTable } = mergeScreenshotMarkers(profile.threads, thread);
+    thread.markers = { ...thread.markers, ...markerTable };
 
     // We filter the profile using the range from the state for this profile.
     const zeroAt = getTimeRangeIncludingAllThreads(profile).start;
@@ -1091,4 +1103,67 @@ function mergeMarkers(
   });
 
   return { markerTable: newMarkerTable, translationMaps };
+}
+
+/**
+ * Merge screenshot markers from different threads. And update the target threads string table while doing it.
+ */
+function mergeScreenshotMarkers(
+  threads: Thread[],
+  targetThread: Thread
+): {
+  markerTable: RawMarkerTable,
+  translationMaps: TranslationMapForMarkers[],
+} {
+  const targetMarkerTable = { ...targetThread.markers };
+  const translationMaps = [];
+
+  threads.forEach(thread => {
+    if (thread.stringTable.hasString('CompositorScreenshot')) {
+      const translationMap = new Map();
+      const { markers, stringTable } = thread;
+
+      for (let markerIndex = 0; markerIndex < markers.length; markerIndex++) {
+        const data = markers.data[markerIndex];
+
+        if (data !== null && data.type === 'CompositorScreenshot') {
+          // We need to move the name string to the new string table if doesn't exist.
+          const nameIndex = markers.name[markerIndex];
+          const newName =
+            nameIndex >= 0 ? stringTable.getString(nameIndex) : null;
+
+          // We need to move the url string to the new string table if doesn't exist.
+          const urlIndex = data.url;
+          const newUrl = urlIndex >= 0 ? stringTable.getString(urlIndex) : null;
+
+          // Move compositor screenshot marker data to the new marker table.
+          const compositorScreenshotMarkerData = {
+            ...data,
+          };
+          compositorScreenshotMarkerData.url =
+            newUrl === null
+              ? -1
+              : targetThread.stringTable.indexForString(newUrl);
+
+          targetMarkerTable.data.push(compositorScreenshotMarkerData);
+          targetMarkerTable.name.push(
+            newName === null
+              ? -1
+              : targetThread.stringTable.indexForString(newName)
+          );
+          targetMarkerTable.startTime.push(markers.startTime[markerIndex]);
+          targetMarkerTable.endTime.push(markers.endTime[markerIndex]);
+          targetMarkerTable.phase.push(markers.phase[markerIndex]);
+          targetMarkerTable.category.push(markers.category[markerIndex]);
+
+          // Set the translation map and increase the table length.
+          translationMap.set(markerIndex, targetMarkerTable.length);
+          targetMarkerTable.length++;
+        }
+      }
+      translationMaps.push(translationMap);
+    }
+  });
+
+  return { markerTable: targetMarkerTable, translationMaps };
 }

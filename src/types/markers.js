@@ -5,7 +5,7 @@
 
 import type { Milliseconds, Microseconds, Seconds, Bytes } from './units';
 import type { GeckoMarkerStack } from './gecko-profile';
-import type { IndexIntoStackTable, IndexIntoStringTable } from './profile';
+import type { IndexIntoStackTable, IndexIntoStringTable, Tid } from './profile';
 import type { ObjectMap } from './utils';
 
 // Provide different formatting options for strings.
@@ -81,6 +81,15 @@ export type MarkerSchema = {|
   // If none is provided, then the name is used.
   tooltipLabel?: string, // e.g. "Cycle Collect"
 
+  // This is how the marker shows up in the Marker Table description.
+  // If none is provided, then the name is used.
+  tableLabel?: string, // e.g. "{marker.data.eventType} – DOMEvent"
+
+  // This is how the marker shows up in the Marker Chart, where it is drawn
+  // on the screen as a bar.
+  // If none is provided, then the name is used.
+  chartLabel?: string,
+
   // The locations to display
   display: MarkerDisplayLocation[],
 
@@ -102,14 +111,6 @@ export type MarkerSchema = {|
 
 export type MarkerSchemaByName = ObjectMap<MarkerSchema>;
 
-// This type is a more dynamic version of the Payload type.
-type DynamicMarkerPayload = { [key: string]: any };
-// Marker schema can create a dynamic tooltip label. For instance a schema with
-// a `tooltipLabel` field of "Event at {url}" would create a label based off of the
-// "url" property in the payload.
-export type MarkerLabelMaker = DynamicMarkerPayload => string;
-export type MarkerLabelMakerByName = ObjectMap<MarkerLabelMaker>;
-
 /**
  * Markers can include a stack. These are converted to a cause backtrace, which includes
  * the time the stack was taken. Sometimes this cause can be async, and triggered before
@@ -117,6 +118,9 @@ export type MarkerLabelMakerByName = ObjectMap<MarkerLabelMaker>;
  * start and end time.
  */
 export type CauseBacktrace = {|
+  // `tid` is optional because older processed profiles may not have it.
+  // No upgrader was written for this change.
+  tid?: Tid,
   time: Milliseconds,
   stack: IndexIntoStackTable,
 |};
@@ -144,7 +148,12 @@ export type IPCSharedData = {|
  * This utility type removes the "cause" property from a payload, and replaces it with
  * a stack. This effectively converts it from a processed payload to a Gecko payload.
  */
-export type $ReplaceCauseWithStack<T: Object> = {|
+
+export type $ReplaceCauseWithStack<
+  // False positive, generic type bounds are alright:
+  // eslint-disable-next-line flowtype/no-weak-types
+  T: Object
+> = {|
   ...$Diff<
     T,
     // Remove the cause property.
@@ -175,7 +184,6 @@ export type PaintProfilerMarkerTracing = {|
   type: 'tracing',
   category: 'Paint',
   cause?: CauseBacktrace,
-  interval: 'start' | 'end',
 |};
 
 export type ArbitraryEventTracing = {|
@@ -186,7 +194,6 @@ export type ArbitraryEventTracing = {|
 export type CcMarkerTracing = {|
   type: 'tracing',
   category: 'CC',
-  interval: 'start' | 'end',
 |};
 
 export type PhaseTimes<Unit> = { [phase: string]: Unit };
@@ -384,29 +391,6 @@ export type GCSliceMarkerPayload_Gecko = {|
 |};
 
 /**
- * The bailout payload describes a bailout from JIT code where some assumption in
- * the optimization was broken, and the code had to fall back to Baseline. Currently
- * this information is encoded as a string and extracted as a selector.
- */
-export type BailoutPayload = {|
-  type: 'Bailout',
-  bailoutType: string,
-  where: string,
-  script: string,
-  bailoutLine: number,
-  functionLine: number | null,
-|};
-
-/**
- * TODO - Please describe an invalidation.
- */
-export type InvalidationPayload = {|
-  type: 'Invalidation',
-  url: string,
-  line: number | null,
-|};
-
-/**
  * Network http/https loads - one marker for each load that reaches the
  * STOP state that occurs, plus one for the initial START of the load, with
  * the URI and the status.  A unique ID is included to allow these to be linked.
@@ -514,22 +498,21 @@ export type TextMarkerPayload = {|
 export type ChromeCompleteTraceEventPayload = {|
   type: 'CompleteTraceEvent',
   category: string,
-  data: Object | null,
+  data: MixedObject | null,
 |};
 
 // ph: 'I' in the Trace Event Format
 export type ChromeInstantTraceEventPayload = {|
   type: 'InstantTraceEvent',
   category: string,
-  data: Object | null,
+  data: MixedObject | null,
 |};
 
 // ph: 'B' | 'E' in the Trace Event Format
 export type ChromeDurationTraceEventPayload = {|
   type: 'tracing',
   category: 'FromChrome',
-  interval: 'start' | 'end',
-  data: Object | null,
+  data: MixedObject | null,
   cause?: CauseBacktrace,
 |};
 
@@ -544,12 +527,9 @@ export type LogMarkerPayload = {|
 |};
 
 export type DOMEventMarkerPayload = {|
-  type: 'tracing',
-  category: 'DOMEvent',
-  timeStamp?: Milliseconds,
-  interval: 'start' | 'end',
+  type: 'DOMEvent',
+  latency?: Milliseconds,
   eventType: string,
-  phase: 0 | 1 | 2 | 3,
   innerWindowID?: number,
 |};
 
@@ -565,7 +545,6 @@ export type PrefMarkerPayload = {|
 export type NavigationMarkerPayload = {|
   type: 'tracing',
   category: 'Navigation',
-  interval: 'start' | 'end',
   eventType?: string,
   innerWindowID?: number,
 |};
@@ -661,6 +640,9 @@ export type IPCMarkerPayload = {|
   recvTid?: number,
   sendThreadName?: string,
   recvThreadName?: string,
+
+  // This field is a nicely formatted field for the direction.
+  niceDirection: string,
 |};
 
 export type MediaSampleMarkerPayload = {|
@@ -670,6 +652,11 @@ export type MediaSampleMarkerPayload = {|
 |};
 
 /**
+ * This type is generated on the Firefox Profiler side, and doesn't come from Gecko.
+ */
+export type JankPayload = {| type: 'Jank' |};
+
+/**
  * The union of all the different marker payloads that profiler.firefox.com knows about,
  * this is not guaranteed to be all the payloads that we actually get from the Gecko
  * profiler.
@@ -677,8 +664,6 @@ export type MediaSampleMarkerPayload = {|
 export type MarkerPayload =
   | FileIoPayload
   | GPUMarkerPayload
-  | BailoutPayload
-  | InvalidationPayload
   | NetworkPayload
   | UserTimingMarkerPayload
   | TextMarkerPayload
@@ -702,6 +687,7 @@ export type MarkerPayload =
   | ChromeDurationTraceEventPayload
   | ChromeInstantTraceEventPayload
   | MediaSampleMarkerPayload
+  | JankPayload
   | null;
 
 export type MarkerPayload_Gecko =

@@ -73,11 +73,16 @@ exports[`TooltipMarker renders profiled off-main thread FileIO markers properly 
     <div
       class="tooltipDetailsBackTrace"
     >
+      <h2
+        class="tooltipBackTraceTitle"
+      >
+        Triggered 97.500ms ago, at:
+      </h2>
       <ul
         class="backtrace"
       >
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           nsRefreshDriver::AddStyleFlushObserver
           <em
@@ -85,7 +90,7 @@ exports[`TooltipMarker renders profiled off-main thread FileIO markers properly 
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           mozilla::GeckoRestyleManager::PostRestyleEvent
           <em
@@ -93,7 +98,7 @@ exports[`TooltipMarker renders profiled off-main thread FileIO markers properly 
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           XREMain::XRE_main
           <em
@@ -101,7 +106,7 @@ exports[`TooltipMarker renders profiled off-main thread FileIO markers properly 
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           XRE_main
           <em
@@ -109,7 +114,7 @@ exports[`TooltipMarker renders profiled off-main thread FileIO markers properly 
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           _main
           <em
@@ -1301,6 +1306,38 @@ exports[`TooltipMarker renders properly redirect network markers 1`] = `
 </div>
 `;
 
+exports[`TooltipMarker renders tooltips for various markers: Bailout_ShapeGuard after getelem on line 3666 of resource://foo.js -> resource://bar.js:3662-10 1`] = `
+<div
+  class="tooltipMarker propClass"
+  style="--tooltip-detail-max-width: 600px;"
+>
+  <div
+    class="tooltipHeader"
+  >
+    <div
+      class="tooltipOneLine"
+    >
+      <div
+        class="tooltipTitle"
+      >
+        Bailout_ShapeGuard after getelem on line 3666 of resource://foo.js -&gt; resource://bar.js:3662
+      </div>
+    </div>
+  </div>
+  <div
+    class="tooltipDetails"
+  >
+    <div
+      class="tooltipLabel"
+    >
+      Thread
+      :
+    </div>
+    Main Thread
+  </div>
+</div>
+`;
+
 exports[`TooltipMarker renders tooltips for various markers: Bailout-10 1`] = `
 <div
   class="tooltipMarker propClass"
@@ -1325,49 +1362,42 @@ exports[`TooltipMarker renders tooltips for various markers: Bailout-10 1`] = `
     <div
       class="tooltipLabel"
     >
-      Type
+      Details
       :
     </div>
-    ShapeGuard
+    NonObjectInput at JumpTarget on line 27 of https://profiler.firefox.com/701f018d7923ccd65ba7.bundle.js:27
     <div
       class="tooltipLabel"
     >
-      Where
+      Thread
       :
     </div>
-    after getelem
+    Main Thread
+  </div>
+</div>
+`;
+
+exports[`TooltipMarker renders tooltips for various markers: BailoutKind::ArgumentCheck at Uninitialized on line 388 of self-hosted:388-10 1`] = `
+<div
+  class="tooltipMarker propClass"
+  style="--tooltip-detail-max-width: 600px;"
+>
+  <div
+    class="tooltipHeader"
+  >
     <div
-      class="tooltipLabel"
+      class="tooltipOneLine"
     >
-      Script
-      :
+      <div
+        class="tooltipTitle"
+      >
+        BailoutKind::ArgumentCheck at Uninitialized on line 388 of self-hosted:388
+      </div>
     </div>
-    resource://foo.js -&gt; resource://bar.js
-    <div
-      class="tooltipLabel"
-    >
-      Function Line
-      :
-    </div>
-    3,662
-    <div
-      class="tooltipLabel"
-    >
-      Bailout Line
-      :
-    </div>
-    3,666
-    <div
-      class="tooltipLabel"
-    >
-      Description
-      :
-    </div>
-    <div
-      style="max-width: 300px;"
-    >
-      A shape guard based on TI information failed. (We saw an object whose shape does not match that / any of those observed by the baseline IC.)
-    </div>
+  </div>
+  <div
+    class="tooltipDetails"
+  >
     <div
       class="tooltipLabel"
     >
@@ -1398,20 +1428,13 @@ exports[`TooltipMarker renders tooltips for various markers: DOMEvent-10.5 1`] =
       <div
         class="tooltipTitle"
       >
-        commandupdate
+        commandupdate — DOMEvent
       </div>
     </div>
   </div>
   <div
     class="tooltipDetails"
   >
-    <div
-      class="tooltipLabel"
-    >
-      Marker
-      :
-    </div>
-    DOMEvent
     <div
       class="tooltipLabel"
     >
@@ -1517,11 +1540,16 @@ exports[`TooltipMarker renders tooltips for various markers: FileIO (non-profile
     <div
       class="tooltipDetailsBackTrace"
     >
+      <h2
+        class="tooltipBackTraceTitle"
+      >
+        Triggered 97.500ms ago, at:
+      </h2>
       <ul
         class="backtrace"
       >
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           nsRefreshDriver::AddStyleFlushObserver
           <em
@@ -1529,7 +1557,7 @@ exports[`TooltipMarker renders tooltips for various markers: FileIO (non-profile
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           mozilla::GeckoRestyleManager::PostRestyleEvent
           <em
@@ -1537,7 +1565,7 @@ exports[`TooltipMarker renders tooltips for various markers: FileIO (non-profile
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           mozilla::GeckoRestyleManager::ContentStateChanged
           <em
@@ -1545,7 +1573,7 @@ exports[`TooltipMarker renders tooltips for various markers: FileIO (non-profile
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           mozilla::PresShell::ContentStateChanged
           <em
@@ -1553,7 +1581,7 @@ exports[`TooltipMarker renders tooltips for various markers: FileIO (non-profile
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           nsDocument::ContentStateChanged
           <em
@@ -1561,7 +1589,7 @@ exports[`TooltipMarker renders tooltips for various markers: FileIO (non-profile
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           mozilla::dom::Element::RemoveStates
           <em
@@ -1569,7 +1597,7 @@ exports[`TooltipMarker renders tooltips for various markers: FileIO (non-profile
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           mozilla::EventStateManager::UpdateAncestorState
           <em
@@ -1577,7 +1605,7 @@ exports[`TooltipMarker renders tooltips for various markers: FileIO (non-profile
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           mozilla::EventStateManager::SetContentState
           <em
@@ -1585,7 +1613,7 @@ exports[`TooltipMarker renders tooltips for various markers: FileIO (non-profile
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           mozilla::EventStateManager::NotifyMouseOut
           <em
@@ -1593,7 +1621,7 @@ exports[`TooltipMarker renders tooltips for various markers: FileIO (non-profile
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           mozilla::EventStateManager::GenerateMouseEnterExit
           <em
@@ -1601,7 +1629,7 @@ exports[`TooltipMarker renders tooltips for various markers: FileIO (non-profile
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           mozilla::EventStateManager::PreHandleEvent
           <em
@@ -1609,7 +1637,7 @@ exports[`TooltipMarker renders tooltips for various markers: FileIO (non-profile
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           mozilla::PresShell::HandleEventInternal
           <em
@@ -1617,7 +1645,7 @@ exports[`TooltipMarker renders tooltips for various markers: FileIO (non-profile
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           mozilla::PresShell::HandlePositionedEvent
           <em
@@ -1625,7 +1653,7 @@ exports[`TooltipMarker renders tooltips for various markers: FileIO (non-profile
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           mozilla::PresShell::HandleEvent
           <em
@@ -1633,7 +1661,7 @@ exports[`TooltipMarker renders tooltips for various markers: FileIO (non-profile
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           nsViewManager::DispatchEvent
           <em
@@ -1641,7 +1669,7 @@ exports[`TooltipMarker renders tooltips for various markers: FileIO (non-profile
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           nsView::HandleEvent
           <em
@@ -1649,7 +1677,7 @@ exports[`TooltipMarker renders tooltips for various markers: FileIO (non-profile
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           nsChildView::DispatchEvent
           <em
@@ -1657,7 +1685,7 @@ exports[`TooltipMarker renders tooltips for various markers: FileIO (non-profile
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           ChildViewMouseTracker::MouseMoved
           <em
@@ -1665,7 +1693,7 @@ exports[`TooltipMarker renders tooltips for various markers: FileIO (non-profile
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           nsAppShell::Run
           <em
@@ -1673,7 +1701,7 @@ exports[`TooltipMarker renders tooltips for various markers: FileIO (non-profile
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           nsAppStartup::Run
           <em
@@ -1753,11 +1781,16 @@ exports[`TooltipMarker renders tooltips for various markers: FileIO-114 1`] = `
     <div
       class="tooltipDetailsBackTrace"
     >
+      <h2
+        class="tooltipBackTraceTitle"
+      >
+        Triggered 97ms ago, at:
+      </h2>
       <ul
         class="backtrace"
       >
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           nsRefreshDriver::AddStyleFlushObserver
           <em
@@ -1765,7 +1798,7 @@ exports[`TooltipMarker renders tooltips for various markers: FileIO-114 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           mozilla::GeckoRestyleManager::PostRestyleEvent
           <em
@@ -1773,7 +1806,7 @@ exports[`TooltipMarker renders tooltips for various markers: FileIO-114 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           mozilla::GeckoRestyleManager::ContentStateChanged
           <em
@@ -1781,7 +1814,7 @@ exports[`TooltipMarker renders tooltips for various markers: FileIO-114 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           mozilla::PresShell::ContentStateChanged
           <em
@@ -1789,7 +1822,7 @@ exports[`TooltipMarker renders tooltips for various markers: FileIO-114 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           nsDocument::ContentStateChanged
           <em
@@ -1797,7 +1830,7 @@ exports[`TooltipMarker renders tooltips for various markers: FileIO-114 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           mozilla::dom::Element::RemoveStates
           <em
@@ -1805,7 +1838,7 @@ exports[`TooltipMarker renders tooltips for various markers: FileIO-114 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           mozilla::EventStateManager::UpdateAncestorState
           <em
@@ -1813,7 +1846,7 @@ exports[`TooltipMarker renders tooltips for various markers: FileIO-114 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           mozilla::EventStateManager::SetContentState
           <em
@@ -1821,7 +1854,7 @@ exports[`TooltipMarker renders tooltips for various markers: FileIO-114 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           mozilla::EventStateManager::NotifyMouseOut
           <em
@@ -1829,7 +1862,7 @@ exports[`TooltipMarker renders tooltips for various markers: FileIO-114 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           mozilla::EventStateManager::GenerateMouseEnterExit
           <em
@@ -1837,7 +1870,7 @@ exports[`TooltipMarker renders tooltips for various markers: FileIO-114 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           mozilla::EventStateManager::PreHandleEvent
           <em
@@ -1845,7 +1878,7 @@ exports[`TooltipMarker renders tooltips for various markers: FileIO-114 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           mozilla::PresShell::HandleEventInternal
           <em
@@ -1853,7 +1886,7 @@ exports[`TooltipMarker renders tooltips for various markers: FileIO-114 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           mozilla::PresShell::HandlePositionedEvent
           <em
@@ -1861,7 +1894,7 @@ exports[`TooltipMarker renders tooltips for various markers: FileIO-114 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           mozilla::PresShell::HandleEvent
           <em
@@ -1869,7 +1902,7 @@ exports[`TooltipMarker renders tooltips for various markers: FileIO-114 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           nsViewManager::DispatchEvent
           <em
@@ -1877,7 +1910,7 @@ exports[`TooltipMarker renders tooltips for various markers: FileIO-114 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           nsView::HandleEvent
           <em
@@ -1885,7 +1918,7 @@ exports[`TooltipMarker renders tooltips for various markers: FileIO-114 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           nsChildView::DispatchEvent
           <em
@@ -1893,7 +1926,7 @@ exports[`TooltipMarker renders tooltips for various markers: FileIO-114 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           ChildViewMouseTracker::MouseMoved
           <em
@@ -1901,7 +1934,7 @@ exports[`TooltipMarker renders tooltips for various markers: FileIO-114 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           nsAppShell::Run
           <em
@@ -1909,7 +1942,7 @@ exports[`TooltipMarker renders tooltips for various markers: FileIO-114 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           nsAppStartup::Run
           <em
@@ -2276,7 +2309,7 @@ exports[`TooltipMarker renders tooltips for various markers: IPCOut-120 1`] = `
       <div
         class="tooltipTitle"
       >
-        IPC — sent to 2222
+        IPC — sent to 2222
       </div>
     </div>
   </div>
@@ -2297,6 +2330,13 @@ exports[`TooltipMarker renders tooltips for various markers: IPCOut-120 1`] = `
       :
     </div>
     false
+    <div
+      class="tooltipLabel"
+    >
+      From
+      :
+    </div>
+    Main Thread (Thread ID: 0)
     <div
       class="tooltipLabel"
     >
@@ -2355,7 +2395,7 @@ exports[`TooltipMarker renders tooltips for various markers: IPCOut-121 1`] = `
       <div
         class="tooltipTitle"
       >
-        IPC — sent to 2222
+        IPC — sent to 2222
       </div>
     </div>
   </div>
@@ -2376,6 +2416,13 @@ exports[`TooltipMarker renders tooltips for various markers: IPCOut-121 1`] = `
       :
     </div>
     false
+    <div
+      class="tooltipLabel"
+    >
+      From
+      :
+    </div>
+    Main Thread (Thread ID: 0)
     <div
       class="tooltipLabel"
     >
@@ -2415,6 +2462,38 @@ exports[`TooltipMarker renders tooltips for various markers: IPCOut-121 1`] = `
 </div>
 `;
 
+exports[`TooltipMarker renders tooltips for various markers: Invalidate http://mozilla.com/script.js:1234-10 1`] = `
+<div
+  class="tooltipMarker propClass"
+  style="--tooltip-detail-max-width: 600px;"
+>
+  <div
+    class="tooltipHeader"
+  >
+    <div
+      class="tooltipOneLine"
+    >
+      <div
+        class="tooltipTitle"
+      >
+        Invalidate http://mozilla.com/script.js:1234
+      </div>
+    </div>
+  </div>
+  <div
+    class="tooltipDetails"
+  >
+    <div
+      class="tooltipLabel"
+    >
+      Thread
+      :
+    </div>
+    Main Thread
+  </div>
+</div>
+`;
+
 exports[`TooltipMarker renders tooltips for various markers: Invalidate-10 1`] = `
 <div
   class="tooltipMarker propClass"
@@ -2439,17 +2518,10 @@ exports[`TooltipMarker renders tooltips for various markers: Invalidate-10 1`] =
     <div
       class="tooltipLabel"
     >
-      URL
+      Details
       :
     </div>
-    http://mozilla.com/script.js
-    <div
-      class="tooltipLabel"
-    >
-      Line
-      :
-    </div>
-    1,234
+    https://profiler.firefox.com/701f018d7923ccd65ba7.bundle.js:198:23518
     <div
       class="tooltipLabel"
     >
@@ -2748,11 +2820,16 @@ exports[`TooltipMarker renders tooltips for various markers: Styles-18.5 1`] = `
     <div
       class="tooltipDetailsBackTrace"
     >
+      <h2
+        class="tooltipBackTraceTitle"
+      >
+        Triggered 1.500ms ago, at:
+      </h2>
       <ul
         class="backtrace"
       >
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           nsRefreshDriver::AddStyleFlushObserver
           <em
@@ -2760,7 +2837,7 @@ exports[`TooltipMarker renders tooltips for various markers: Styles-18.5 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           mozilla::GeckoRestyleManager::PostRestyleEvent
           <em
@@ -2768,7 +2845,7 @@ exports[`TooltipMarker renders tooltips for various markers: Styles-18.5 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           mozilla::GeckoRestyleManager::ContentStateChanged
           <em
@@ -2776,7 +2853,7 @@ exports[`TooltipMarker renders tooltips for various markers: Styles-18.5 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           mozilla::PresShell::ContentStateChanged
           <em
@@ -2784,7 +2861,7 @@ exports[`TooltipMarker renders tooltips for various markers: Styles-18.5 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           nsDocument::ContentStateChanged
           <em
@@ -2792,7 +2869,7 @@ exports[`TooltipMarker renders tooltips for various markers: Styles-18.5 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           mozilla::dom::Element::RemoveStates
           <em
@@ -2800,7 +2877,7 @@ exports[`TooltipMarker renders tooltips for various markers: Styles-18.5 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           mozilla::EventStateManager::UpdateAncestorState
           <em
@@ -2808,7 +2885,7 @@ exports[`TooltipMarker renders tooltips for various markers: Styles-18.5 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           mozilla::EventStateManager::SetContentState
           <em
@@ -2816,7 +2893,7 @@ exports[`TooltipMarker renders tooltips for various markers: Styles-18.5 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           mozilla::EventStateManager::NotifyMouseOut
           <em
@@ -2824,7 +2901,7 @@ exports[`TooltipMarker renders tooltips for various markers: Styles-18.5 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           mozilla::EventStateManager::GenerateMouseEnterExit
           <em
@@ -2832,7 +2909,7 @@ exports[`TooltipMarker renders tooltips for various markers: Styles-18.5 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           mozilla::EventStateManager::PreHandleEvent
           <em
@@ -2840,7 +2917,7 @@ exports[`TooltipMarker renders tooltips for various markers: Styles-18.5 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           mozilla::PresShell::HandleEventInternal
           <em
@@ -2848,7 +2925,7 @@ exports[`TooltipMarker renders tooltips for various markers: Styles-18.5 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           mozilla::PresShell::HandlePositionedEvent
           <em
@@ -2856,7 +2933,7 @@ exports[`TooltipMarker renders tooltips for various markers: Styles-18.5 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           mozilla::PresShell::HandleEvent
           <em
@@ -2864,7 +2941,7 @@ exports[`TooltipMarker renders tooltips for various markers: Styles-18.5 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           nsViewManager::DispatchEvent
           <em
@@ -2872,7 +2949,7 @@ exports[`TooltipMarker renders tooltips for various markers: Styles-18.5 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           nsView::HandleEvent
           <em
@@ -2880,7 +2957,7 @@ exports[`TooltipMarker renders tooltips for various markers: Styles-18.5 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           nsChildView::DispatchEvent
           <em
@@ -2888,7 +2965,7 @@ exports[`TooltipMarker renders tooltips for various markers: Styles-18.5 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           ChildViewMouseTracker::MouseMoved
           <em
@@ -2896,7 +2973,7 @@ exports[`TooltipMarker renders tooltips for various markers: Styles-18.5 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           nsAppShell::Run
           <em
@@ -2904,7 +2981,7 @@ exports[`TooltipMarker renders tooltips for various markers: Styles-18.5 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           nsAppStartup::Run
           <em
@@ -3001,15 +3078,13 @@ exports[`TooltipMarker renders tooltips for various markers: Styles-20 1`] = `
       <h2
         class="tooltipBackTraceTitle"
       >
-        First invalidated 
-        0.50
-        ms before the flush, at:
+        First invalidated 500μs before the flush, at:
       </h2>
       <ul
         class="backtrace"
       >
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           nsRefreshDriver::AddStyleFlushObserver
           <em
@@ -3017,7 +3092,7 @@ exports[`TooltipMarker renders tooltips for various markers: Styles-20 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           mozilla::GeckoRestyleManager::PostRestyleEvent
           <em
@@ -3025,7 +3100,7 @@ exports[`TooltipMarker renders tooltips for various markers: Styles-20 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           mozilla::GeckoRestyleManager::ContentStateChanged
           <em
@@ -3033,7 +3108,7 @@ exports[`TooltipMarker renders tooltips for various markers: Styles-20 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           mozilla::PresShell::ContentStateChanged
           <em
@@ -3041,7 +3116,7 @@ exports[`TooltipMarker renders tooltips for various markers: Styles-20 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           nsDocument::ContentStateChanged
           <em
@@ -3049,7 +3124,7 @@ exports[`TooltipMarker renders tooltips for various markers: Styles-20 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           mozilla::dom::Element::RemoveStates
           <em
@@ -3057,7 +3132,7 @@ exports[`TooltipMarker renders tooltips for various markers: Styles-20 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           mozilla::EventStateManager::UpdateAncestorState
           <em
@@ -3065,7 +3140,7 @@ exports[`TooltipMarker renders tooltips for various markers: Styles-20 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           mozilla::EventStateManager::SetContentState
           <em
@@ -3073,7 +3148,7 @@ exports[`TooltipMarker renders tooltips for various markers: Styles-20 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           mozilla::EventStateManager::NotifyMouseOut
           <em
@@ -3081,7 +3156,7 @@ exports[`TooltipMarker renders tooltips for various markers: Styles-20 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           mozilla::EventStateManager::GenerateMouseEnterExit
           <em
@@ -3089,7 +3164,7 @@ exports[`TooltipMarker renders tooltips for various markers: Styles-20 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           mozilla::EventStateManager::PreHandleEvent
           <em
@@ -3097,7 +3172,7 @@ exports[`TooltipMarker renders tooltips for various markers: Styles-20 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           mozilla::PresShell::HandleEventInternal
           <em
@@ -3105,7 +3180,7 @@ exports[`TooltipMarker renders tooltips for various markers: Styles-20 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           mozilla::PresShell::HandlePositionedEvent
           <em
@@ -3113,7 +3188,7 @@ exports[`TooltipMarker renders tooltips for various markers: Styles-20 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           mozilla::PresShell::HandleEvent
           <em
@@ -3121,7 +3196,7 @@ exports[`TooltipMarker renders tooltips for various markers: Styles-20 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           nsViewManager::DispatchEvent
           <em
@@ -3129,7 +3204,7 @@ exports[`TooltipMarker renders tooltips for various markers: Styles-20 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           nsView::HandleEvent
           <em
@@ -3137,7 +3212,7 @@ exports[`TooltipMarker renders tooltips for various markers: Styles-20 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           nsChildView::DispatchEvent
           <em
@@ -3145,7 +3220,7 @@ exports[`TooltipMarker renders tooltips for various markers: Styles-20 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           ChildViewMouseTracker::MouseMoved
           <em
@@ -3153,7 +3228,7 @@ exports[`TooltipMarker renders tooltips for various markers: Styles-20 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           nsAppShell::Run
           <em
@@ -3161,7 +3236,7 @@ exports[`TooltipMarker renders tooltips for various markers: Styles-20 1`] = `
           />
         </li>
         <li
-          class="backtraceStackFrame"
+          class="backtraceStackFrame backtraceStackFrame_isFrameLabel"
         >
           nsAppStartup::Run
           <em
@@ -3246,7 +3321,11 @@ exports[`TooltipMarker renders tooltips for various markers: UserTiming-12.5 1`]
       Marker
       :
     </div>
-    UserTiming
+    <div
+      class="tooltipDetailsDescription"
+    >
+      UserTiming
+    </div>
     <div
       class="tooltipLabel"
     >
@@ -3260,7 +3339,11 @@ exports[`TooltipMarker renders tooltips for various markers: UserTiming-12.5 1`]
       Description
       :
     </div>
-    UserTiming is created using the DOM APIs performance.mark() and performance.measure().
+    <div
+      class="tooltipDetailsDescription"
+    >
+      UserTiming is created using the DOM APIs performance.mark() and performance.measure().
+    </div>
     <div
       class="tooltipLabel"
     >
@@ -3268,6 +3351,54 @@ exports[`TooltipMarker renders tooltips for various markers: UserTiming-12.5 1`]
       :
     </div>
     Main Thread
+  </div>
+</div>
+`;
+
+exports[`TooltipMarker shows a tooltip for Jank markers 1`] = `
+<div
+  class="tooltipMarker"
+  style="--tooltip-detail-max-width: 600px;"
+>
+  <div
+    class="tooltipHeader"
+  >
+    <div
+      class="tooltipOneLine"
+    >
+      <div
+        class="tooltipTiming"
+      >
+        70ms
+      </div>
+      <div
+        class="tooltipTitle"
+      >
+        Jank – event processing delay
+      </div>
+    </div>
+  </div>
+  <div
+    class="tooltipDetails"
+  >
+    <div
+      class="tooltipLabel"
+    >
+      Description
+      :
+    </div>
+    <div
+      class="tooltipDetailsDescription"
+    >
+      Jank markers show when the main event loop of a thread has been busy. It is a good indicator that there may be some kind of performance problem that is worth investigating.
+    </div>
+    <div
+      class="tooltipLabel"
+    >
+      Thread
+      :
+    </div>
+    Empty
   </div>
 </div>
 `;

@@ -7,8 +7,6 @@ The [Firefox Profiler] visualizes performance data recorded from web browsers. I
 
 ![Screenshot of the Firefox Profiler](./docs-user/images/screenshot-2019-02-05.jpg?raw=true)
 
-_This project was previously called perf.html and [Cleopatra]._
-
 ### Usage
 
 > Visit [profiler.firefox.com](https://profiler.firefox.com/) :rocket:
@@ -49,9 +47,11 @@ yarn install
 yarn start
 ```
 
-You can also develop the Firefox Profiler online in a pre-configured development environment:
+You can also develop the Firefox Profiler online in a pre-configured development environment.
 
 [![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/firefox-devtools/profiler)
+
+Please look at our [gitpod documentation](./docs-user/gitpod.md) for more information.
 
 For more detailed information on getting started contributing. We have plenty of docs available to get you started.
 
@@ -61,7 +61,8 @@ For more detailed information on getting started contributing. We have plenty of
 |[Code of Conduct](./CODE_OF_CONDUCT.md)| We want to create an open and inclusive community, we have a few guidelines to help us out. |
 |[Developer Documentation](./docs-developer)| Want to know how this whole thing works? Get started here. |
 |[Source Files](./src)| Dive into the inner workings of the code. Most folders have a `README.md` providing more information. |
-|[End-User Documentation](https://profiler.firefox.com/docs/#/)| These docs are customized for actual users of the profiler, not just folks contributing |
+|[End-User Documentation](https://profiler.firefox.com/docs/#/)| These docs are customized for actual users of the profiler, not just folks contributing. |
+|[Gitpod documentatation](./docs-user/gitpod.md)| Start here if you want to set up a work space on gitpod. |
 
 ### Discussion
 
@@ -83,5 +84,4 @@ Some permissive software licenses request but do not require an acknowledgement 
 [Redux]:http://redux.js.org/
 [Mozilla]:https://www.mozilla.org/
 [Firefox]:https://www.mozilla.org/firefox/
-[Cleopatra]: https://github.com/mozilla/cleopatra
 [zlib]: http://www.zlib.net/

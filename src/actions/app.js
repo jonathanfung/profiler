@@ -10,28 +10,28 @@ import {
   getIsActiveTabResourcesPanelOpen,
   getSelectedThreadIndexes,
   getLocalTrackOrderByPid,
-} from '../selectors/url-state';
+} from 'firefox-profiler/selectors/url-state';
 import {
   getTrackThreadHeights,
   getIsEventDelayTracksEnabled,
-} from '../selectors/app';
+} from 'firefox-profiler/selectors/app';
 import {
   getActiveTabMainTrack,
   getLocalTracksByPid,
   getThreads,
-} from '../selectors/profile';
-import { sendAnalytics } from '../utils/analytics';
+} from 'firefox-profiler/selectors/profile';
+import { sendAnalytics } from 'firefox-profiler/utils/analytics';
 import {
   stateFromLocation,
   withHistoryReplaceStateSync,
-} from '../app-logic/url-handling';
+} from 'firefox-profiler/app-logic/url-handling';
 import { finalizeProfileView } from './receive-profile';
 import { fatalError } from './errors';
 import {
   addEventDelayTracksForThreads,
   initializeLocalTrackOrderByPid,
-} from '../profile-logic/tracks';
-import { selectedThreadSelectors } from '../selectors/per-thread';
+} from 'firefox-profiler/profile-logic/tracks';
+import { selectedThreadSelectors } from 'firefox-profiler/selectors/per-thread';
 
 import type {
   Profile,
@@ -40,8 +40,9 @@ import type {
   Action,
   ThunkAction,
   UrlState,
+  UploadedProfileInformation,
 } from 'firefox-profiler/types';
-import type { TabSlug } from '../app-logic/tabs-handling';
+import type { TabSlug } from 'firefox-profiler/app-logic/tabs-handling';
 
 export function changeSelectedTab(selectedTab: TabSlug): ThunkAction<void> {
   return (dispatch, getState) => {
@@ -113,10 +114,12 @@ export function setHasZoomedViaMousewheel() {
  * This function is called when we start setting up the initial url state.
  * It takes the location and profile data, converts the location into url
  * state and then dispatches relevant actions to finalize the view.
+ * `profile` parameter can be null when the data source can't provide the profile
+ * and the url upgrader step is not needed (e.g. 'from-addon').
  */
 export function setupInitialUrlState(
   location: Location,
-  profile: Profile
+  profile: Profile | null
 ): ThunkAction<void> {
   return dispatch => {
     let urlState;
@@ -235,7 +238,7 @@ export function toggleResourcesPanel(): ThunkAction<void> {
       // If it was open when we dispatched that action, it means we are closing this panel.
       // We would like to also select the main track when we close this panel.
       const mainTrack = getActiveTabMainTrack(getState());
-      selectedThreadIndexes = new Set([mainTrack.mainThreadIndex]);
+      selectedThreadIndexes = new Set([...mainTrack.threadIndexes]);
     }
 
     // Toggle the resources panel eventually.
@@ -292,4 +295,22 @@ export function enableEventDelayTracks(): ThunkAction<boolean> {
 
     return true;
   };
+}
+
+/**
+ * This caches the profile data in the local state for synchronous access.
+ */
+export function setCurrentProfileUploadedInformation(
+  uploadedProfileInformation: UploadedProfileInformation | null
+): Action {
+  return {
+    type: 'SET_CURRENT_PROFILE_UPLOADED_INFORMATION',
+    uploadedProfileInformation,
+  };
+}
+
+export function profileRemotelyDeleted(): Action {
+  // Ideally we should store the current profile data in a local indexeddb, and
+  // set the URL to /local/<indexeddb-key>.
+  return { type: 'PROFILE_REMOTELY_DELETED' };
 }

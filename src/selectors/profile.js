@@ -16,11 +16,7 @@ import {
   IPCMarkerCorrelations,
   correlateIPCMarkers,
 } from '../profile-logic/marker-data';
-
-import {
-  markerSchema,
-  getMarkerLabelMaker,
-} from '../profile-logic/marker-schema';
+import { markerSchemaFrontEndOnly } from '../profile-logic/marker-schema';
 
 import type {
   Profile,
@@ -70,7 +66,6 @@ import type {
   $ReturnType,
   MarkerSchema,
   MarkerSchemaByName,
-  MarkerLabelMakerByName,
 } from 'firefox-profiler/types';
 
 export const getProfileView: Selector<ProfileViewState> = state =>
@@ -85,8 +80,9 @@ export const getOriginsProfileView: Selector<OriginsViewState> = state =>
 /**
  * Profile View Options
  */
-export const getProfileViewOptions: Selector<*> = state =>
-  getProfileView(state).viewOptions;
+export const getProfileViewOptions: Selector<
+  $PropertyType<ProfileViewState, 'viewOptions'>
+> = state => getProfileView(state).viewOptions;
 export const getProfileRootRange: Selector<StartEndRange> = state =>
   getProfileViewOptions(state).rootRange;
 export const getSymbolicationStatus: Selector<SymbolicationStatus> = state =>
@@ -112,6 +108,9 @@ export const getCommittedRange: Selector<StartEndRange> = createSelector(
     return rootRange;
   }
 );
+
+export const getMouseTimePosition: Selector<Milliseconds | null> = state =>
+  getProfileViewOptions(state).mouseTimePosition;
 
 export const getPreviewSelection: Selector<PreviewSelection> = state =>
   getProfileViewOptions(state).previewSelection;
@@ -179,7 +178,25 @@ export const getContentfulSpeedIndexProgress: Selector<
 export const getProfilerConfiguration: Selector<?ProfilerConfiguration> = state =>
   getMeta(state).configuration;
 
-export const getMarkerSchema: Selector<MarkerSchema[]> = () => markerSchema;
+// Get the marker schema that comes from the Gecko profile.
+const getMarkerSchemaGecko: Selector<MarkerSchema[]> = state =>
+  getMeta(state).markerSchema;
+
+// Combine the marker schema from Gecko and the front-end. This allows the front-end
+// to generate markers such as the Jank markers, and display them.
+export const getMarkerSchema: Selector<MarkerSchema[]> = createSelector(
+  getMarkerSchemaGecko,
+  geckoSchema => {
+    const frontEndSchemaNames = new Set([
+      ...markerSchemaFrontEndOnly.map(schema => schema.name),
+    ]);
+    return [
+      // Don't duplicate schema definitions that the front-end already has.
+      ...geckoSchema.filter(schema => !frontEndSchemaNames.has(schema.name)),
+      ...markerSchemaFrontEndOnly,
+    ];
+  }
+);
 
 export const getMarkerSchemaByName: Selector<MarkerSchemaByName> = createSelector(
   getMarkerSchema,
@@ -189,19 +206,6 @@ export const getMarkerSchemaByName: Selector<MarkerSchemaByName> = createSelecto
       result[schema.name] = schema;
     }
     return result;
-  }
-);
-
-export const getMarkerLabelMakerByName: Selector<MarkerLabelMakerByName> = createSelector(
-  getMarkerSchema,
-  markerSchemaList => {
-    const results: MarkerLabelMakerByName = Object.create(null);
-    for (const schema of markerSchemaList) {
-      if (schema.tooltipLabel) {
-        results[schema.name] = getMarkerLabelMaker(schema.tooltipLabel);
-      }
-    }
-    return results;
   }
 );
 
@@ -237,7 +241,7 @@ export const getCounterSelectors = (index: CounterIndex): CounterSelectors => {
  * signature of each selector is defined in the function body, and inferred in the return
  * type of the function.
  */
-function _createCounterSelectors(counterIndex: CounterIndex): * {
+function _createCounterSelectors(counterIndex: CounterIndex) {
   const getCounter: Selector<Counter> = state =>
     ensureExists(
       getProfile(state).counters,

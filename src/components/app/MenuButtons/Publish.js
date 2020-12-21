@@ -10,12 +10,12 @@ import {
   toggleCheckedSharingOptions,
   attemptToPublish,
   resetUploadState,
-} from '../../../actions/publish';
+} from 'firefox-profiler/actions/publish';
 import {
   getProfile,
   getProfileRootRange,
   getHasPreferenceMarkers,
-} from '../../../selectors/profile';
+} from 'firefox-profiler/selectors/profile';
 import {
   getAbortFunction,
   getCheckedSharingOptions,
@@ -27,11 +27,13 @@ import {
   getUploadProgressString,
   getUploadError,
   getShouldSanitizeByDefault,
-} from '../../../selectors/publish';
-import { BlobUrlLink } from '../../shared/BlobUrlLink';
-import { assertExhaustiveCheck } from '../../../utils/flow';
+} from 'firefox-profiler/selectors/publish';
+import { BlobUrlLink } from 'firefox-profiler/components/shared/BlobUrlLink';
+import { assertExhaustiveCheck } from 'firefox-profiler/utils/flow';
 
-import explicitConnect, { type ConnectedProps } from '../../../utils/connect';
+import explicitConnect, {
+  type ConnectedProps,
+} from 'firefox-profiler/utils/connect';
 
 import type {
   Profile,
@@ -40,7 +42,7 @@ import type {
   UploadPhase,
 } from 'firefox-profiler/types';
 
-require('./Publish.css');
+import './Publish.css';
 
 type OwnProps = {|
   +isRepublish?: boolean,
@@ -119,7 +121,7 @@ class MenuButtonsPublishImpl extends React.PureComponent<PublishProps> {
           <div className="menuButtonsPublishIcon" />
           <h1 className="menuButtonsPublishTitle">
             {isRepublish
-              ? 'Re-publish Performance Profile'
+              ? 'Re-upload Performance Profile'
               : 'Share Performance Profile'}
           </h1>
           <p className="menuButtonsPublishInfoDescription">
@@ -165,7 +167,7 @@ class MenuButtonsPublishImpl extends React.PureComponent<PublishProps> {
               className="photon-button photon-button-primary menuButtonsPublishButton menuButtonsPublishButtonsUpload"
             >
               <span className="menuButtonsPublishButtonsSvg menuButtonsPublishButtonsSvgUpload" />
-              Publish
+              Upload
             </button>
           </div>
         </form>
@@ -205,7 +207,7 @@ class MenuButtonsPublishImpl extends React.PureComponent<PublishProps> {
       >
         <div className="menuButtonsPublishUploadTop">
           <div className="menuButtonsPublishUploadTitle">
-            Publishing profile…
+            Uploading profile…
           </div>
           <div className="menuButtonsPublishUploadPercentage">
             {uploadProgressString}
@@ -238,7 +240,7 @@ class MenuButtonsPublishImpl extends React.PureComponent<PublishProps> {
   _renderErrorPanel() {
     const { error, resetUploadState } = this.props;
     let message: string =
-      'There was an unknown error when trying to publish the profile.';
+      'There was an unknown error when trying to upload the profile.';
     if (
       error &&
       typeof error === 'object' &&
@@ -256,8 +258,10 @@ class MenuButtonsPublishImpl extends React.PureComponent<PublishProps> {
         className="menuButtonsPublishUpload"
         data-testid="MenuButtonsPublish-container"
       >
-        <div className="photon-message-bar photon-message-bar-error">
-          Uh oh, something went wrong when publishing the profile.
+        <div className="photon-message-bar photon-message-bar-error photon-message-bar-inner-content">
+          <div className="photon-message-bar-inner-text">
+            Uh oh, something went wrong when uploading the profile.
+          </div>
           <button
             className="photon-button photon-button-micro photon-message-bar-action-button"
             type="button"

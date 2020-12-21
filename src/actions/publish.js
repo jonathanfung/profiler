@@ -5,31 +5,31 @@
 // @flow
 import { stripIndent } from 'common-tags';
 
-import { uploadBinaryProfileData } from '../profile-logic/profile-store';
-import { sendAnalytics } from '../utils/analytics';
+import { uploadBinaryProfileData } from 'firefox-profiler/profile-logic/profile-store';
+import { sendAnalytics } from 'firefox-profiler/utils/analytics';
 import {
   getUploadGeneration,
   getSanitizedProfile,
   getSanitizedProfileData,
   getRemoveProfileInformation,
   getPrePublishedState,
-} from '../selectors/publish';
+} from 'firefox-profiler/selectors/publish';
 import {
   getDataSource,
   getProfileNameForStorage,
   getUrlPredictor,
-} from '../selectors/url-state';
+} from 'firefox-profiler/selectors/url-state';
 import {
   getProfile,
   getZeroAt,
   getCommittedRange,
   getProfileFilterPageData,
-} from '../selectors/profile';
+} from 'firefox-profiler/selectors/profile';
 import { viewProfile } from './receive-profile';
-import { ensureExists } from '../utils/flow';
-import { extractProfileTokenFromJwt } from '../utils/jwt';
-import { withHistoryReplaceStateSync } from '../app-logic/url-handling';
-import { storeProfileData } from '../app-logic/published-profiles-store';
+import { ensureExists } from 'firefox-profiler/utils/flow';
+import { extractProfileTokenFromJwt } from 'firefox-profiler/utils/jwt';
+import { withHistoryReplaceStateSync } from 'firefox-profiler/app-logic/url-handling';
+import { persistUploadedProfileInformationToDb } from 'firefox-profiler/app-logic/uploaded-profiles-db';
 
 import type {
   Action,
@@ -89,17 +89,29 @@ export function uploadFailed(error: mixed): Action {
 // to rerun in case the selectors have been invalidated.
 // Note that the returned promise won't ever be rejected, all errors are handled
 // here.
-async function storeJustPublishedProfileData(
+async function persistJustUploadedProfileInformationToDb(
   profileToken: string,
   jwtToken: string | null,
   sanitizedInformation,
   prepublishedState: State
 ): Promise<void> {
+  if (process.env.NODE_ENV === 'test' && !window.indexedDB) {
+    // In tests where we're not especially testing this behavior, we may still
+    // want to test behavior related to publication. In that case we won't
+    // always have the indexeddb mock, so let's opt-out of the indexeddb-related
+    // behavior.
+    return;
+  }
+
   const zeroAt = getZeroAt(prepublishedState);
   const adjustRange = range => ({
     start: range.start - zeroAt,
     end: range.end - zeroAt,
   });
+
+  // We'll persist any computed profileName, because we may lose it otherwise
+  // (This is the case with zip files).
+  const profileName = getProfileNameForStorage(prepublishedState);
 
   // The url predictor returns the URL that would be serialized out of the state
   // resulting of the actions passed in argument.
@@ -123,13 +135,14 @@ async function storeJustPublishedProfileData(
         profileToken,
         committedRanges,
         oldThreadIndexToNew,
+        profileName,
         null /* prepublished State */
       )
     );
   } else {
     // Predicts the URL we'll have after the process is finished.
     predictedUrl = urlPredictor(
-      profilePublished(profileToken, null /* prepublished State */)
+      profilePublished(profileToken, profileName, null /* prepublished State */)
     );
   }
 
@@ -137,11 +150,11 @@ async function storeJustPublishedProfileData(
   const profileFilterPageData = getProfileFilterPageData(prepublishedState);
 
   try {
-    await storeProfileData({
+    await persistUploadedProfileInformationToDb({
       profileToken,
       jwtToken,
       publishedDate: new Date(),
-      name: getProfileNameForStorage(prepublishedState),
+      name: profileName,
       originHostname: profileFilterPageData
         ? profileFilterPageData.hostname
         : null,
@@ -213,6 +226,10 @@ export function attemptToPublish(): ThunkAction<Promise<boolean>> {
       // Grab the original pre-published state, so that we can revert back to it if needed.
       const prePublishedState = getState();
 
+      // We'll persist any computed profileName in the URL, because we may lose
+      // it otherwise (This is the case with zip files).
+      const profileName = getProfileNameForStorage(prePublishedState);
+
       // Get the current generation of this request. It can be aborted midway through.
       // This way we can check inside this async function if we need to bail out early.
       const uploadGeneration = getUploadGeneration(prePublishedState);
@@ -255,9 +272,8 @@ export function attemptToPublish(): ThunkAction<Promise<boolean>> {
       // Because we want to store the published profile even when the upload
       // generation changed, we store the data here, before the state is fully
       // updated, and we'll have to predict the state inside this function.
-      // Note that this function is asynchronous, we don't await it on purpose.
       // We catch all errors in this function.
-      storeJustPublishedProfileData(
+      await persistJustUploadedProfileInformationToDb(
         hash,
         hashOrToken === hash ? null : hashOrToken,
         sanitizedInformation,
@@ -289,9 +305,24 @@ export function attemptToPublish(): ThunkAction<Promise<boolean>> {
             hash,
             committedRanges,
             oldThreadIndexToNew,
+            profileName,
             prePublishedState
           )
         );
+
+        // At this moment, we don't have the profile data in state anymore,
+        // because the action profileSanitized will reset all the state of
+        // profile-view, including the profile data. In the future we may want
+        // to fix this (for example move the profile data in another reducer, or
+        // keep the profile state when resetting the state).
+        // This still works because it also sets the "phase" state to
+        // "TRANSITIONING_FROM_STALE_PROFILE" that avoids rendering anything
+        // (see AppViewRouter).
+        // viewProfile below needs to synchronously dispatch the new profile
+        // again so that the user doesn't see a glitch. This is still most
+        // probably a performance problem because all components are unmounted
+        // and mounted again.
+
         // Swap out the URL state, since the view profile calculates all of the default
         // settings. If we don't do this then we can go back in history to where we
         // are trying to view a profile without valid view settings.
@@ -302,15 +333,17 @@ export function attemptToPublish(): ThunkAction<Promise<boolean>> {
           dispatch(viewProfile(profile));
         });
       } else {
+        const dataSource = getDataSource(prePublishedState);
+        const isUnpublished =
+          dataSource === 'unpublished' || dataSource === 'from-addon';
         dispatch(
           profilePublished(
             hash,
+            profileName,
             // Only include the pre-published state if we want to be able to revert
             // the profile. If we are viewing from-addon, then it's only a single
             // profile.
-            getDataSource(prePublishedState) === 'from-addon'
-              ? null
-              : prePublishedState
+            isUnpublished ? null : prePublishedState
           )
         );
       }
@@ -357,6 +390,7 @@ export function profileSanitized(
   hash: string,
   committedRanges: StartEndRange[] | null,
   oldThreadIndexToNew: Map<ThreadIndex, ThreadIndex> | null,
+  profileName: string,
   prePublishedState: State | null
 ): Action {
   return {
@@ -364,6 +398,7 @@ export function profileSanitized(
     hash,
     committedRanges,
     oldThreadIndexToNew,
+    profileName,
     prePublishedState,
   };
 }
@@ -373,6 +408,7 @@ export function profileSanitized(
  */
 export function profilePublished(
   hash: string,
+  profileName: string,
   // If we're publishing from a URL or Zip file, then offer to revert to the previous
   // state.
   prePublishedState: State | null
@@ -380,6 +416,7 @@ export function profilePublished(
   return {
     type: 'PROFILE_PUBLISHED',
     hash,
+    profileName,
     prePublishedState,
   };
 }

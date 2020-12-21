@@ -13,6 +13,7 @@ import {
   getProfileFromTextSamples,
   getNetworkMarkers,
   getProfileWithMarkers,
+  getProfileWithEventDelays,
 } from '../fixtures/profiles/processed-profile';
 import { selectedThreadSelectors } from '../../selectors/per-thread';
 import { getFirstSelectedThreadIndex } from '../../selectors/url-state';
@@ -74,11 +75,8 @@ describe('TooltipMarker', function() {
         10.5,
         11.3,
         {
-          type: 'tracing',
-          category: 'DOMEvent',
+          type: 'DOMEvent',
           eventType: 'commandupdate',
-          interval: 'start',
-          phase: 2,
           innerWindowID: innerWindowID,
         },
       ],
@@ -99,7 +97,6 @@ describe('TooltipMarker', function() {
         {
           type: 'tracing',
           category: 'Paint',
-          interval: 'start',
         },
       ],
       [
@@ -245,11 +242,41 @@ describe('TooltipMarker', function() {
           },
         },
       ],
+      // This bailout marker was present around Firefox 72.
       [
         'Bailout_ShapeGuard after getelem on line 3666 of resource://foo.js -> resource://bar.js:3662',
         10,
       ],
+      // This bailout marker was present in Firefox 82.
+      [
+        'BailoutKind::ArgumentCheck at Uninitialized on line 388 of self-hosted:388',
+        10,
+      ],
+      // This is an old-style invalidation marker. This was changed to a Text marker without
+      // a version bump between Gecko profile version 20-21.
       ['Invalidate http://mozilla.com/script.js:1234', 10],
+      // This is a bailout text marker, as of Gecko profile version 20-21, Firefox 83.
+      [
+        'Bailout',
+        10,
+        null,
+        {
+          type: 'Text',
+          name:
+            'NonObjectInput at JumpTarget on line 27 of https://profiler.firefox.com/701f018d7923ccd65ba7.bundle.js:27',
+        },
+      ],
+      // This is a Invalidate text marker, as of Gecko profile version 20-21
+      [
+        'Invalidate',
+        10,
+        null,
+        {
+          type: 'Text',
+          name:
+            'https://profiler.firefox.com/701f018d7923ccd65ba7.bundle.js:198:23518',
+        },
+      ],
       [
         'Styles',
         18.5,
@@ -257,8 +284,8 @@ describe('TooltipMarker', function() {
         {
           type: 'tracing',
           category: 'Paint',
-          interval: 'start',
           cause: {
+            tid: 4444,
             time: 17.0,
             stack: funcNames.indexOf('nsRefreshDriver::AddStyleFlushObserver'),
           },
@@ -296,6 +323,7 @@ describe('TooltipMarker', function() {
           stylesShared: 15,
           stylesReused: 20,
           cause: {
+            tid: 4445,
             time: 19.5,
             stack: funcNames.indexOf('nsRefreshDriver::AddStyleFlushObserver'),
           },
@@ -308,7 +336,6 @@ describe('TooltipMarker', function() {
         {
           type: 'tracing',
           category: 'Paint',
-          interval: 'start',
         },
       ],
       [
@@ -321,6 +348,7 @@ describe('TooltipMarker', function() {
           filename: '/foo/bar',
           operation: 'create/open',
           cause: {
+            tid: 4446,
             time: 17.0,
             stack: funcNames.indexOf('nsRefreshDriver::AddStyleFlushObserver'),
           },
@@ -336,6 +364,7 @@ describe('TooltipMarker', function() {
           filename: '/foo/bar',
           operation: 'create/open',
           cause: {
+            tid: 4447,
             time: 17.0,
             stack: funcNames.indexOf('nsRefreshDriver::AddStyleFlushObserver'),
           },
@@ -357,6 +386,7 @@ describe('TooltipMarker', function() {
           direction: 'sending',
           phase: 'endpoint',
           sync: false,
+          niceDirection: 'sending to 2222',
         },
       ],
       [
@@ -374,6 +404,7 @@ describe('TooltipMarker', function() {
           direction: 'sending',
           phase: 'transferStart',
           sync: false,
+          niceDirection: 'sending to 2222',
         },
       ],
       [
@@ -413,6 +444,7 @@ describe('TooltipMarker', function() {
       const { container } = render(
         <Provider store={store}>
           <TooltipMarker
+            markerIndex={markerIndex}
             marker={marker}
             threadsKey={threadIndex}
             className="propClass"
@@ -451,6 +483,7 @@ describe('TooltipMarker', function() {
     return render(
       <Provider store={store}>
         <TooltipMarker
+          markerIndex={markerIndexes[0]}
           marker={marker}
           threadsKey={0}
           className="propClass"
@@ -658,6 +691,7 @@ describe('TooltipMarker', function() {
           filename: '/foo/bar',
           operation: 'create/open',
           cause: {
+            tid: 4448,
             time: 17.0,
             stack: funcNames.indexOf('nsRefreshDriver::AddStyleFlushObserver'),
           },
@@ -679,9 +713,42 @@ describe('TooltipMarker', function() {
     const { container } = render(
       <Provider store={store}>
         <TooltipMarker
+          markerIndex={markerIndexes[0]}
           marker={marker}
           threadsKey={threadIndex}
           className="propClass"
+          restrictHeightWidth={true}
+        />
+      </Provider>
+    );
+
+    expect(container.firstChild).toMatchSnapshot();
+  });
+
+  it('shows a tooltip for Jank markers', function() {
+    const eventDelay = [
+      0,
+      20,
+      40,
+      60,
+      70,
+      // break point
+      0,
+      20,
+      40,
+    ];
+
+    const profile = getProfileWithEventDelays(eventDelay);
+    const store = storeWithProfile(profile);
+    const { getState } = store;
+    const getMarker = selectedThreadSelectors.getMarkerGetter(getState());
+
+    const { container } = render(
+      <Provider store={store}>
+        <TooltipMarker
+          markerIndex={0}
+          marker={getMarker(0)}
+          threadsKey={0}
           restrictHeightWidth={true}
         />
       </Provider>

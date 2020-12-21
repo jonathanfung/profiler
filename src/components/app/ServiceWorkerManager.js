@@ -4,14 +4,13 @@
 // @flow
 
 import React, { PureComponent } from 'react';
-import explicitConnect from '../../utils/connect';
-import { assertExhaustiveCheck } from '../../utils/flow';
+import explicitConnect from 'firefox-profiler/utils/connect';
+import { assertExhaustiveCheck } from 'firefox-profiler/utils/flow';
+import { getDataSource } from 'firefox-profiler/selectors/url-state';
+import { getView } from 'firefox-profiler/selectors/app';
+import { getSymbolicationStatus } from 'firefox-profiler/selectors/profile';
 
-import { getDataSource } from '../../selectors/url-state';
-import { getView } from '../../selectors/app';
-import { getSymbolicationStatus } from '../../selectors/profile';
-
-import type { ConnectedProps } from '../../utils/connect';
+import type { ConnectedProps } from 'firefox-profiler/utils/connect';
 import type {
   DataSource,
   Phase,
@@ -73,7 +72,7 @@ type State = {|
  * loading fails, and resume the process after the reload.
  */
 
-class ServiceWorkerManager extends PureComponent<Props, State> {
+class ServiceWorkerManagerImpl extends PureComponent<Props, State> {
   state = {
     installStatus: 'idle',
     isNoticeDisplayed: false,
@@ -146,6 +145,7 @@ class ServiceWorkerManager extends PureComponent<Props, State> {
         return false;
       case 'from-file':
       case 'from-addon':
+      case 'unpublished':
       case 'public':
       case 'from-url':
       case 'compare':
@@ -193,6 +193,7 @@ class ServiceWorkerManager extends PureComponent<Props, State> {
         return true;
       case 'from-file':
       case 'from-addon':
+      case 'unpublished':
         // We should not propose to reload the page for these data sources,
         // because we'd lose the data.
         return false;
@@ -304,9 +305,13 @@ class ServiceWorkerManager extends PureComponent<Props, State> {
         <div className="serviceworker-ready-notice-wrapper">
           {/* We use the wrapper to horizontally center the notice */}
           <div className="photon-message-bar photon-message-bar-warning serviceworker-ready-notice">
-            A new version of the application was applied before this page was
-            fully loaded. You might see malfunctions.
-            {this._canUpdateServiceWorker() ? this.renderButton() : null}
+            <div className="photon-message-bar-inner-content">
+              <div className="photon-message-bar-inner-text">
+                A new version of the application was applied before this page
+                was fully loaded. You might see malfunctions.
+              </div>
+              {this._canUpdateServiceWorker() ? this.renderButton() : null}
+            </div>
             <button
               aria-label="Hide the reload notice"
               title="Hide the reload notice"
@@ -328,9 +333,13 @@ class ServiceWorkerManager extends PureComponent<Props, State> {
       <div className="serviceworker-ready-notice-wrapper">
         {/* We use the wrapper to horizontally center the notice */}
         <div className="photon-message-bar serviceworker-ready-notice">
-          A new version of the application has been downloaded and is ready to
-          use.
-          {this.renderButton()}
+          <div className="photon-message-bar-inner-content">
+            <div className="photon-message-bar-inner-text">
+              A new version of the application has been downloaded and is ready
+              to use.
+            </div>
+            {this.renderButton()}
+          </div>
           <button
             aria-label="Hide the reload notice"
             title="Hide the reload notice"
@@ -344,11 +353,11 @@ class ServiceWorkerManager extends PureComponent<Props, State> {
   }
 }
 
-export default explicitConnect<{||}, StateProps, {||}>({
+export const ServiceWorkerManager = explicitConnect<{||}, StateProps, {||}>({
   mapStateToProps: state => ({
     phase: getView(state).phase,
     dataSource: getDataSource(state),
     symbolicationStatus: getSymbolicationStatus(state),
   }),
-  component: ServiceWorkerManager,
+  component: ServiceWorkerManagerImpl,
 });

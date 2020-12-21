@@ -6,19 +6,19 @@
 import { oneLine } from 'common-tags';
 import queryString from 'query-string';
 import {
-  processProfile,
+  processGeckoProfile,
   unserializeProfileOfArbitraryFormat,
-} from '../profile-logic/process-profile';
-import { SymbolStore } from '../profile-logic/symbol-store';
+} from 'firefox-profiler/profile-logic/process-profile';
+import { SymbolStore } from 'firefox-profiler/profile-logic/symbol-store';
 import {
   symbolicateProfile,
   applySymbolicationStep,
-} from '../profile-logic/symbolication';
-import * as MozillaSymbolicationAPI from '../profile-logic/mozilla-symbolication-api';
-import { mergeProfilesForDiffing } from '../profile-logic/merge-compare';
-import { decompress } from '../utils/gz';
-import { expandUrl } from '../utils/shorten-url';
-import { TemporaryError } from '../utils/errors';
+} from 'firefox-profiler/profile-logic/symbolication';
+import * as MozillaSymbolicationAPI from 'firefox-profiler/profile-logic/mozilla-symbolication-api';
+import { mergeProfilesForDiffing } from 'firefox-profiler/profile-logic/merge-compare';
+import { decompress } from 'firefox-profiler/utils/gz';
+import { expandUrl } from 'firefox-profiler/utils/shorten-url';
+import { TemporaryError } from 'firefox-profiler/utils/errors';
 import JSZip from 'jszip';
 import {
   getSelectedThreadIndexesOrNull,
@@ -35,9 +35,10 @@ import {
   getRelevantPagesForActiveTab,
 } from 'firefox-profiler/selectors';
 import {
+  withHistoryReplaceStateAsync,
   stateFromLocation,
-  getDataSourceFromPathParts,
-} from '../app-logic/url-handling';
+  ensureIsValidDataSource,
+} from 'firefox-profiler/app-logic/url-handling';
 import {
   initializeLocalTrackOrderByPid,
   initializeHiddenLocalTracksByPid,
@@ -47,8 +48,8 @@ import {
   initializeSelectedThreadIndex,
   initializeHiddenGlobalTracks,
   getVisibleThreads,
-} from '../profile-logic/tracks';
-import { computeActiveTabTracks } from '../profile-logic/active-tab';
+} from 'firefox-profiler/profile-logic/tracks';
+import { computeActiveTabTracks } from 'firefox-profiler/profile-logic/active-tab';
 import { setDataSource } from './profile-view';
 import { fatalError } from './errors';
 import { GOOGLE_STORAGE_BUCKET } from 'firefox-profiler/app-logic/constants';
@@ -70,8 +71,11 @@ import type {
   OriginsTimelineRoot,
 } from 'firefox-profiler/types';
 
-import type { SymbolicationStepInfo } from '../profile-logic/symbolication';
-import { assertExhaustiveCheck, ensureExists } from '../utils/flow';
+import type { SymbolicationStepInfo } from 'firefox-profiler/profile-logic/symbolication';
+import {
+  assertExhaustiveCheck,
+  ensureExists,
+} from 'firefox-profiler/utils/flow';
 
 /**
  * This file collects all the actions that are used for receiving the profile in the
@@ -102,7 +106,8 @@ export function loadProfile(
     pathInZipFile: string,
     implementationFilter: ImplementationFilter,
     transformStacks: TransformStacksPerThread,
-    geckoProfiler?: $GeckoProfiler,
+    geckoProfiler: $GeckoProfiler,
+    skipSymbolication: boolean, // Please use this in tests only.
   |}> = {},
   initialLoad: boolean = false
 ): ThunkAction<Promise<void>> {
@@ -141,7 +146,8 @@ export function loadProfile(
       await dispatch(
         finalizeProfileView(
           config.geckoProfiler,
-          config.timelineTrackOrganization
+          config.timelineTrackOrganization,
+          config.skipSymbolication
         )
       );
     }
@@ -154,12 +160,19 @@ export function loadProfile(
  * view information, this function will compute the defaults. There is a decent amount of
  * complexity to making all of these decisions, which has been collected in a bunch of
  * functions in the src/profile-logic/tracks.js file.
+ *
+ * Note: skipSymbolication is used in tests only, this is enforced.
  */
 export function finalizeProfileView(
   geckoProfiler?: $GeckoProfiler,
-  timelineTrackOrganization?: TimelineTrackOrganization
+  timelineTrackOrganization?: TimelineTrackOrganization,
+  skipSymbolication?: boolean
 ): ThunkAction<Promise<void>> {
   return async (dispatch, getState) => {
+    if (skipSymbolication && process.env.NODE_ENV !== 'test') {
+      throw new Error('Please do not use skipSymbolication outside of tests');
+    }
+
     const profile = getProfileOrNull(getState());
     if (profile === null || getView(getState()).phase !== 'PROFILE_LOADED') {
       // Profile load was not successful. Do not continue.
@@ -220,7 +233,8 @@ export function finalizeProfileView(
 
     // Note we kick off symbolication only for the profiles we know for sure
     // that they weren't symbolicated.
-    if (profile.meta.symbolicated === false) {
+    // We can skip the symbolication in tests if needed.
+    if (!skipSymbolication && profile.meta.symbolicated === false) {
       const symbolStore = getSymbolStore(dispatch, geckoProfiler);
       if (symbolStore) {
         // Only symbolicate if a symbol store is available. In tests we may not
@@ -535,7 +549,7 @@ export function finalizeActiveTabProfileView(
     if (selectedThreadIndexes === null) {
       // Select the main track if there is no selected thread.
       selectedThreadIndexes = new Set([
-        activeTabTimeline.mainTrack.mainThreadIndex,
+        ...activeTabTimeline.mainTrack.threadIndexes,
       ]);
     }
 
@@ -632,6 +646,7 @@ export function viewProfile(
     implementationFilter: ImplementationFilter,
     transformStacks: TransformStacksPerThread,
     geckoProfiler: $GeckoProfiler,
+    skipSymbolication: boolean,
   |}> = {}
 ): ThunkAction<Promise<void>> {
   return async dispatch => {
@@ -807,7 +822,7 @@ async function getProfileFromAddon(
   // XXX update state to show that we're connected to the profiler addon
   const rawGeckoProfile = await geckoProfiler.getProfile();
   const unpackedProfile = await _unpackGeckoProfileFromAddon(rawGeckoProfile);
-  const profile = processProfile(unpackedProfile);
+  const profile = processGeckoProfile(unpackedProfile);
   await dispatch(loadProfile(profile, { geckoProfiler }));
 
   return profile;
@@ -920,7 +935,7 @@ export function retrieveProfileFromAddon(): ThunkAction<Promise<void>> {
       await getProfileFromAddon(dispatch, geckoProfiler);
     } catch (error) {
       dispatch(fatalError(error));
-      throw error;
+      console.error(error);
     }
   };
 }
@@ -960,7 +975,7 @@ type FetchProfileArgs = {
   url: string,
   onTemporaryError: TemporaryError => void,
   // Allow tests to capture the reported error, but normally use console.error.
-  reportError?: Function,
+  reportError?: (...data: Array<any>) => void,
 };
 
 type ProfileOrZip = {
@@ -1052,7 +1067,7 @@ function _deduceContentType(
 async function _extractProfileOrZipFromResponse(
   url: string,
   response: Response,
-  reportError: Function
+  reportError: (...data: Array<any>) => void
 ): Promise<ProfileOrZip> {
   const contentType = _deduceContentType(
     url,
@@ -1085,7 +1100,7 @@ async function _extractProfileOrZipFromResponse(
  */
 async function _extractZipFromResponse(
   response: Response,
-  reportError: Function
+  reportError: (...data: Array<any>) => void
 ): Promise<JSZip> {
   const buffer = await response.arrayBuffer();
   try {
@@ -1108,7 +1123,7 @@ async function _extractZipFromResponse(
  */
 async function _extractJsonFromResponse(
   response: Response,
-  reportError: Function,
+  reportError: (...data: Array<any>) => void,
   fileType: 'application/json' | null
 ): Promise<any> {
   try {
@@ -1209,7 +1224,7 @@ export function waitingForProfileFromFile(): Action {
   };
 }
 
-function _fileReader(input: File): * {
+function _fileReader(input: File) {
   const reader = new FileReader();
   const promise = new Promise((resolve, reject) => {
     // Flow's definition for FileReader doesn't handle the polymorphic nature of
@@ -1263,7 +1278,9 @@ export function retrieveProfileFromFile(
               throw new Error('Unable to parse the profile.');
             }
 
-            await dispatch(viewProfile(profile));
+            await withHistoryReplaceStateAsync(async () => {
+              await dispatch(viewProfile(profile));
+            });
           }
           break;
         case 'application/zip':
@@ -1285,7 +1302,9 @@ export function retrieveProfileFromFile(
             throw new Error('Unable to parse the profile.');
           }
 
-          await dispatch(viewProfile(profile));
+          await withHistoryReplaceStateAsync(async () => {
+            await dispatch(viewProfile(profile));
+          });
         }
       }
     } catch (error) {
@@ -1388,12 +1407,10 @@ export function retrieveProfilesToCompare(
 // the url and processing the UrlState.
 export function getProfilesFromRawUrl(
   location: Location
-): ThunkAction<
-  Promise<{| profile: Profile | null, shouldSetupInitialUrlState: boolean |}>
-> {
+): ThunkAction<Promise<Profile | null>> {
   return async (dispatch, getState) => {
     const pathParts = location.pathname.split('/').filter(d => d);
-    let dataSource = getDataSourceFromPathParts(pathParts);
+    let dataSource = ensureIsValidDataSource(pathParts[0]);
     if (dataSource === 'from-file') {
       // Redirect to 'none' if `dataSource` is 'from-file' since initial urls can't
       // be 'from-file' and needs to be redirected to home page.
@@ -1401,10 +1418,9 @@ export function getProfilesFromRawUrl(
     }
     dispatch(setDataSource(dataSource));
 
-    let shouldSetupInitialUrlState = true;
     switch (dataSource) {
       case 'from-addon':
-        shouldSetupInitialUrlState = false;
+      case 'unpublished':
         // We don't need to `await` the result because there's no url upgrading
         // when retrieving the profile from the addon and we don't need to wait
         // for the process. Moreover we don't want to wait for the end of
@@ -1444,9 +1460,6 @@ export function getProfilesFromRawUrl(
 
     // Profile may be null only for the `from-addon` dataSource since we do
     // not `await` for retrieveProfileFromAddon function.
-    return {
-      profile: getProfileOrNull(getState()),
-      shouldSetupInitialUrlState,
-    };
+    return getProfileOrNull(getState());
   };
 }

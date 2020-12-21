@@ -13,7 +13,7 @@ import {
   INTERVAL_START,
   INTERVAL_END,
 } from 'firefox-profiler/app-logic/constants';
-import { processProfile } from '../../profile-logic/process-profile';
+import { processGeckoProfile } from '../../profile-logic/process-profile';
 import {
   filterRawMarkerTableToRange,
   filterRawMarkerTableToRangeWithMarkersToDelete,
@@ -42,7 +42,7 @@ import type {
 
 describe('Derive markers from Gecko phase markers', function() {
   function setupWithTestDefinedMarkers(markers) {
-    const profile = processProfile(createGeckoProfileWithMarkers(markers));
+    const profile = processGeckoProfile(createGeckoProfileWithMarkers(markers));
     profile.meta.symbolicated = true; // Avoid symbolication.
     const { getState } = storeWithProfile(profile);
     const mainGetMarker = selectedThreadSelectors.getMarkerGetter(getState());
@@ -72,7 +72,6 @@ describe('Derive markers from Gecko phase markers', function() {
         end: null,
         name: 'TestDefinedMarker',
         start: 5,
-        title: null,
       },
     ]);
   });
@@ -93,7 +92,6 @@ describe('Derive markers from Gecko phase markers', function() {
         end: 6,
         name: 'TestDefinedMarker',
         start: 5,
-        title: null,
       },
     ]);
   });
@@ -119,7 +117,6 @@ describe('Derive markers from Gecko phase markers', function() {
         end: 6,
         name: 'TestDefinedMarker',
         start: 5,
-        title: null,
       },
     ]);
   });
@@ -140,7 +137,6 @@ describe('Derive markers from Gecko phase markers', function() {
         end: 6,
         name: 'TestDefinedMarker',
         start: 0,
-        title: null,
         incomplete: true,
       },
     ]);
@@ -164,7 +160,6 @@ describe('Derive markers from Gecko phase markers', function() {
         end: profile.threads[0].samples.length,
         name: 'TestDefinedMarker',
         start: 2,
-        title: null,
         incomplete: true,
       },
     ]);
@@ -201,7 +196,6 @@ describe('Derive markers from Gecko phase markers', function() {
         end: 7,
         name: 'TestDefinedMarker',
         start: 2,
-        title: null,
       },
       {
         category: 0,
@@ -209,7 +203,6 @@ describe('Derive markers from Gecko phase markers', function() {
         end: 5,
         name: 'TestDefinedMarker',
         start: 3,
-        title: null,
       },
     ]);
   });
@@ -249,7 +242,6 @@ describe('Derive markers from Gecko phase markers', function() {
         end: 5,
         name: 'Marker A',
         start: 2,
-        title: null,
       },
       {
         category: 0,
@@ -257,7 +249,6 @@ describe('Derive markers from Gecko phase markers', function() {
         end: 7,
         name: 'Marker B',
         start: 3,
-        title: null,
       },
     ]);
   });
@@ -305,7 +296,6 @@ describe('Derive markers from Gecko phase markers', function() {
         end: startTimeB,
         name: 'CompositorScreenshot',
         start: 2,
-        title: null,
       },
       // The last has a duration until the end of the thread range.
       {
@@ -314,7 +304,6 @@ describe('Derive markers from Gecko phase markers', function() {
         end: threadRange.end,
         name: 'CompositorScreenshot',
         start: startTimeB,
-        title: null,
       },
     ]);
   });
@@ -327,7 +316,7 @@ describe('deriveMarkersFromRawMarkerTable', function() {
     // mock is called in one of the tests.
     jest.spyOn(console, 'error').mockImplementation(() => {});
 
-    const profile = processProfile(createGeckoProfile());
+    const profile = processGeckoProfile(createGeckoProfile());
     profile.meta.symbolicated = true; // avoid to kick off the symbolication process
     const thread = profile.threads[0]; // This is the parent process main thread
     const contentThread = profile.threads[2]; // This is the content process main thread
@@ -376,7 +365,7 @@ describe('deriveMarkersFromRawMarkerTable', function() {
       'VsyncTimestamp:VsyncTimestamp',
       'tracing:Reflow',
       'tracing:Rasterize',
-      'tracing:DOMEvent',
+      'DOMEvent:DOMEvent',
       'GCMinor:MinorGC',
       'UserTiming:UserTiming',
       'tracing:Reflow',
@@ -399,18 +388,18 @@ describe('deriveMarkersFromRawMarkerTable', function() {
       start: 2,
       end: null,
       name: 'VsyncTimestamp',
-      title: null,
     });
   });
+
   it('should create a marker', function() {
     const { markers } = setup();
     expect(markers[2]).toMatchObject({
       start: 3,
       end: 8,
       name: 'Reflow',
-      title: null,
     });
   });
+
   it('should fold the two reflow markers into one marker', function() {
     const { markers } = setup();
     expect(markers.length).toEqual(18);
@@ -418,18 +407,18 @@ describe('deriveMarkersFromRawMarkerTable', function() {
       start: 3,
       end: 8,
       name: 'Reflow',
-      title: null,
     });
   });
+
   it('should fold the two Rasterize markers into one marker, after the reflow marker', function() {
     const { markers } = setup();
     expect(markers[3]).toMatchObject({
       start: 4,
       end: 5,
       name: 'Rasterize',
-      title: null,
     });
   });
+
   it('should correlate the IPC markers together and fold transferStart/transferEnd markers', function() {
     const { markers, contentMarkers } = setup();
     expect(markers[14]).toMatchObject({
@@ -464,74 +453,73 @@ describe('deriveMarkersFromRawMarkerTable', function() {
       data: { phase: 'endpoint' },
     });
   });
+
   it('should create a marker for the MinorGC startTime/endTime marker', function() {
     const { markers } = setup();
     expect(markers[5]).toMatchObject({
       start: 11,
       end: 12,
       name: 'MinorGC',
-      title: null,
     });
   });
+
   it('should create a marker for the DOMEvent marker', function() {
     const { markers } = setup();
     expect(markers[4]).toMatchObject({
       end: 10,
       name: 'DOMEvent',
       start: 9,
-      title: null,
     });
   });
+
   it('should create a marker for the marker UserTiming', function() {
     const { markers } = setup();
     expect(markers[6]).toMatchObject({
       end: 13,
       name: 'UserTiming',
       start: 12,
-      title: null,
     });
   });
+
   it('should handle markers without a start', function() {
     const { markers } = setup();
     expect(markers[0]).toMatchObject({
       start: 0, // Truncated to the time of the first captured sample.
       end: 1,
       name: 'Rasterize',
-      title: null,
     });
   });
+
   it('should handle markers without an end', function() {
     const { markers } = setup();
     expect(markers[17]).toMatchObject({
       start: 100,
       end: 100,
       name: 'Rasterize',
-      title: null,
       incomplete: true,
     });
   });
+
   it('should handle nested markers correctly', function() {
     const { markers } = setup();
     expect(markers[7]).toMatchObject({
       start: 13,
       end: 18,
       name: 'Reflow',
-      title: null,
     });
     expect(markers[8]).toMatchObject({
       start: 14,
       end: 15,
       name: 'Reflow',
-      title: null,
     });
   });
+
   it('should handle arbitrary tracing markers correctly', function() {
     const { markers } = setup();
     expect(markers[9]).toMatchObject({
       start: 21,
       end: null,
       name: 'ArbitraryName',
-      title: null,
       data: { category: 'ArbitraryCategory', type: 'tracing' },
     });
   });
@@ -566,7 +554,6 @@ describe('deriveMarkersFromRawMarkerTable', function() {
       end: 24,
       name: 'Load 32: https://github.com/rustwasm/wasm-bindgen/issues/5',
       start: 22,
-      title: null,
       category: 0,
     });
     expect(markers[14]).toEqual({
@@ -584,6 +571,7 @@ describe('deriveMarkersFromRawMarkerTable', function() {
         recvThreadName: 'Content Process (Thread ID: 1111)',
         messageSeqno: 1,
         messageType: 'PContent::Msg_PreferenceUpdate',
+        niceDirection: 'sent to Content Process (Thread ID: 1111)',
         side: 'parent',
         direction: 'sending',
         phase: 'endpoint',
@@ -593,7 +581,6 @@ describe('deriveMarkersFromRawMarkerTable', function() {
       incomplete: false,
       name: 'IPCOut',
       start: 30,
-      title: 'IPC — sent to Content Process (Thread ID: 1111)',
       category: 0,
     });
 
@@ -612,6 +599,7 @@ describe('deriveMarkersFromRawMarkerTable', function() {
         recvThreadName: 'Content Process (Thread ID: 1111)',
         messageSeqno: 1,
         messageType: 'PContent::Msg_PreferenceUpdate',
+        niceDirection: 'received from Parent Process (Thread ID: 3333)',
         side: 'child',
         direction: 'receiving',
         phase: 'endpoint',
@@ -621,7 +609,6 @@ describe('deriveMarkersFromRawMarkerTable', function() {
       incomplete: false,
       name: 'IPCIn',
       start: 30,
-      title: 'IPC — received from Parent Process (Thread ID: 3333)',
       category: 0,
     });
     expect(contentMarkers[12]).toEqual({
@@ -648,7 +635,6 @@ describe('deriveMarkersFromRawMarkerTable', function() {
       end: 1024,
       name: 'Load 32: https://github.com/rustwasm/wasm-bindgen/issues/5',
       start: 1022,
-      title: null,
       category: 0,
     });
     expect(contentMarkers[13]).toEqual({
@@ -656,6 +642,7 @@ describe('deriveMarkersFromRawMarkerTable', function() {
         // Stack property is converted to a cause.
         cause: {
           stack: 2,
+          tid: 1111,
           time: 1,
         },
         filename: '/foo/bar/',
@@ -666,10 +653,10 @@ describe('deriveMarkersFromRawMarkerTable', function() {
       end: 1024,
       name: 'FileIO',
       start: 1022,
-      title: null,
       category: 0,
     });
   });
+
   it('should create a marker for the marker CompositorScreenshot', function() {
     const { markers } = setup();
     expect(markers[12]).toMatchObject({
@@ -683,7 +670,6 @@ describe('deriveMarkersFromRawMarkerTable', function() {
       name: 'CompositorScreenshot',
       start: 25,
       end: 25,
-      title: null,
     });
   });
 });

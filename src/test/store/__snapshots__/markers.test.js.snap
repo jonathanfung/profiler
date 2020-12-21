@@ -8,13 +8,11 @@ Array [
       "category": "Navigation",
       "eventType": "load",
       "innerWindowID": 1,
-      "interval": "start",
       "type": "tracing",
     },
     "end": 5,
     "name": "Load",
     "start": 4,
-    "title": null,
   },
   Object {
     "category": 0,
@@ -22,20 +20,17 @@ Array [
     "end": null,
     "name": "TTI",
     "start": 6,
-    "title": null,
   },
   Object {
     "category": 0,
     "data": Object {
       "category": "Navigation",
       "innerWindowID": 1,
-      "interval": "start",
       "type": "tracing",
     },
     "end": 7,
     "name": "DOMContentLoaded",
     "start": 6,
-    "title": null,
   },
   Object {
     "category": 0,
@@ -43,7 +38,6 @@ Array [
     "end": null,
     "name": "Navigation::Start",
     "start": 7,
-    "title": null,
   },
   Object {
     "category": 0,
@@ -51,7 +45,6 @@ Array [
     "end": null,
     "name": "Contentful paint at something",
     "start": 8,
-    "title": null,
   },
 ]
 `;

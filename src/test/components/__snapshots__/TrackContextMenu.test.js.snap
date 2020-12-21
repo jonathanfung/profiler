@@ -2,7 +2,7 @@
 
 exports[`timeline/TrackContextMenu selected global track matches the snapshot of a global non-process track 1`] = `
 <nav
-  class="react-contextmenu timeline-context-menu"
+  class="react-contextmenu timelineTrackContextMenu"
   role="menu"
   style="position: fixed; opacity: 0; pointer-events: none;"
   tabindex="-1"
@@ -14,6 +14,15 @@ exports[`timeline/TrackContextMenu selected global track matches the snapshot of
     tabindex="-1"
   >
     Hide other screenshot tracks
+  </div>
+  <div
+    aria-disabled="false"
+    class="react-contextmenu-item"
+    role="menuitem"
+    tabindex="-1"
+  >
+    Hide 
+    "Screenshots"
   </div>
   <div
     class="react-contextmenu-separator"
@@ -39,7 +48,7 @@ exports[`timeline/TrackContextMenu selected global track matches the snapshot of
 
 exports[`timeline/TrackContextMenu selected global track matches the snapshot of a global track 1`] = `
 <nav
-  class="react-contextmenu timeline-context-menu"
+  class="react-contextmenu timelineTrackContextMenu"
   role="menu"
   style="position: fixed; opacity: 0; pointer-events: none;"
   tabindex="-1"
@@ -60,6 +69,15 @@ exports[`timeline/TrackContextMenu selected global track matches the snapshot of
     tabindex="-1"
   >
     Only show this process group
+  </div>
+  <div
+    aria-disabled="false"
+    class="react-contextmenu-item"
+    role="menuitem"
+    tabindex="-1"
+  >
+    Hide 
+    "Content Process"
   </div>
   <div
     class="react-contextmenu-separator"
@@ -108,11 +126,20 @@ exports[`timeline/TrackContextMenu selected global track matches the snapshot of
 
 exports[`timeline/TrackContextMenu selected global track network track will be displayed when a number is not set for ctxId 1`] = `
 <nav
-  class="react-contextmenu timeline-context-menu"
+  class="react-contextmenu timelineTrackContextMenu"
   role="menu"
   style="position: fixed; opacity: 0; pointer-events: none;"
   tabindex="-1"
 >
+  <div
+    aria-disabled="false"
+    class="react-contextmenu-item"
+    role="menuitem"
+    tabindex="-1"
+  >
+    Hide 
+    "Process 0"
+  </div>
   <div>
     <div
       aria-disabled="false"
@@ -157,7 +184,7 @@ exports[`timeline/TrackContextMenu selected global track network track will be d
 
 exports[`timeline/TrackContextMenu selected local track matches the snapshot of a local track 1`] = `
 <nav
-  class="react-contextmenu timeline-context-menu"
+  class="react-contextmenu timelineTrackContextMenu"
   role="menu"
   style="position: fixed; opacity: 0; pointer-events: none;"
   tabindex="-1"
@@ -169,6 +196,15 @@ exports[`timeline/TrackContextMenu selected local track matches the snapshot of 
     tabindex="-1"
   >
     Only show 
+    "DOM Worker"
+  </div>
+  <div
+    aria-disabled="false"
+    class="react-contextmenu-item"
+    role="menuitem"
+    tabindex="-1"
+  >
+    Hide 
     "DOM Worker"
   </div>
   <div

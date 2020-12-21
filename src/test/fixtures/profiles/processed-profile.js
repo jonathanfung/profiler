@@ -45,6 +45,7 @@ import {
   IPCMarkerCorrelations,
 } from '../../../profile-logic/marker-data';
 import { getTimeRangeForThread } from '../../../profile-logic/profile-data';
+import { markerSchemaForTests } from './marker-schema';
 
 // Array<[MarkerName, Milliseconds, Data]>
 type MarkerName = string;
@@ -294,6 +295,9 @@ export function getProfileWithMarkers(
   ...markersPerThread: TestDefinedMarkers[]
 ): Profile {
   const profile = getEmptyProfile();
+  // Provide a useful marker schema, rather than an empty one.
+  profile.meta.markerSchema = markerSchemaForTests;
+
   if (markersPerThread.length === 0) {
     throw new Error(
       'getProfileWithMarkers expected to get at least one list of markers.'
@@ -329,7 +333,6 @@ export function getMarkerTableProfile() {
         {
           type: 'tracing',
           category: 'Paint',
-          interval: 'start',
         },
       ],
       [
@@ -356,6 +359,7 @@ export function getMarkerTableProfile() {
           direction: 'sending',
           phase: 'endpoint',
           sync: false,
+          niceDirection: 'sending to 2222',
         },
       ],
       [
@@ -366,6 +370,26 @@ export function getMarkerTableProfile() {
           type: 'Log',
           name: 'nsJARChannel::nsJARChannel [this=0x87f1ec80]\n',
           module: 'nsJarProtocol',
+        },
+      ],
+      [
+        'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed eget magna sed magna vehicula congue id id nulla. Ut convallis, neque consequat aliquam egestas, dui urna interdum quam, id semper magna erat et nisi. Vivamus molestie quis ligula eget aliquam. Sed facilisis, turpis sed facilisis posuere, risus odio convallis velit, vitae vehicula justo risus at ipsum. Proin non porttitor neque. Vivamus fringilla ex nec iaculis cursus. Vestibulum suscipit mauris sem, vitae gravida ipsum fermentum id. Quisque pulvinar blandit ullamcorper. Donec id justo at metus scelerisque pulvinar. Proin suscipit suscipit nisi, quis tempus ipsum vulputate quis. Pellentesque sodales rutrum eros, eget pulvinar ante condimentum a. Donec accumsan, ante ut facilisis cursus, nibh quam congue eros, vitae placerat tortor magna vel lacus. Etiam odio diam, venenatis eu sollicitudin non, ultrices ut urna. Aliquam vehicula diam eu eros eleifend, ac vulputate purus faucibus.',
+        165.87091900000001,
+        165.871503,
+        {
+          type: 'Text',
+          name: '5.5',
+        },
+      ],
+      [
+        'FileIO',
+        174,
+        175,
+        {
+          type: 'FileIO',
+          source: 'PoisonIOInterposer',
+          filename: '/foo/bar',
+          operation: 'create/open',
         },
       ],
     ].sort((a, b) => a[1] - b[1])
@@ -445,6 +469,8 @@ export function getProfileFromTextSamples(
   funcNamesDictPerThread: Array<{ [funcName: string]: number }>,
 } {
   const profile = getEmptyProfile();
+  // Provide a useful marker schema, rather than an empty one.
+  profile.meta.markerSchema = markerSchemaForTests;
   const categories = profile.meta.categories;
 
   const funcNamesPerThread = [];
@@ -920,7 +946,6 @@ export function getNetworkTrackProfile() {
   const domContentLoadedBase = {
     type: 'tracing',
     category: 'Navigation',
-    interval: 'start',
     innerWindowID: innerWindowID,
   };
 
@@ -931,7 +956,6 @@ export function getNetworkTrackProfile() {
       5,
       ({
         ...loadPayloadBase,
-        interval: 'start',
       }: NavigationMarkerPayload),
     ],
     ['TTI', 6],
@@ -943,7 +967,6 @@ export function getNetworkTrackProfile() {
       7,
       ({
         ...domContentLoadedBase,
-        interval: 'start',
       }: NavigationMarkerPayload),
     ],
   ]);
@@ -977,6 +1000,7 @@ function _getIPCMarkers(
     direction: 'sending',
     phase: 'endpoint',
     sync: false,
+    niceDirection: 'sending to 1234',
     ...options,
   };
 
@@ -1172,6 +1196,7 @@ export function getProfileWithEventDelays(
   userEventDelay?: Milliseconds[]
 ): Profile {
   const profile = getEmptyProfile();
+  profile.meta.markerSchema = markerSchemaForTests;
   profile.threads = [getThreadWithEventDelay(userEventDelay)];
   return profile;
 }
@@ -1222,7 +1247,7 @@ export function getThreadWithEventDelay(
  *         - E (total: 3, self: 3)
  */
 
-export function getProfileWithJsAllocations(): * {
+export function getProfileWithJsAllocations() {
   // First create a normal sample-based profile.
   const {
     profile,
@@ -1298,7 +1323,7 @@ export function getProfileWithJsAllocations(): * {
  *       - D (total: -11, self: —)
  *         - E (total: -11, self: -11)
  */
-export function getProfileWithUnbalancedNativeAllocations(): * {
+export function getProfileWithUnbalancedNativeAllocations() {
   // First create a normal sample-based profile.
   const {
     profile,
@@ -1362,7 +1387,7 @@ export function getProfileWithUnbalancedNativeAllocations(): * {
  *       - Gjs (total: 13, self: 13)
  */
 
-export function getProfileWithBalancedNativeAllocations(): * {
+export function getProfileWithBalancedNativeAllocations() {
   // First create a normal sample-based profile.
   const {
     profile,
@@ -1438,7 +1463,7 @@ export function getProfileWithBalancedNativeAllocations(): * {
 export function addActiveTabInformationToProfile(
   profile: Profile,
   activeBrowsingContextID?: BrowsingContextID
-): * {
+) {
   const firstTabBrowsingContextID = 1;
   const secondTabBrowsingContextID = 4;
   const parentInnerWindowIDsWithChildren = 11111111111;

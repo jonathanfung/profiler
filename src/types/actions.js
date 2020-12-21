@@ -28,13 +28,25 @@ import type { TemporaryError } from '../utils/errors';
 import type { Transform, TransformStacksPerThread } from './transforms';
 import type { IndexIntoZipFileTable } from '../profile-logic/zip-files';
 import type { TabSlug } from '../app-logic/tabs-handling';
-import type { UrlState, UploadState, State } from './state';
-import type { CssPixels, StartEndRange } from './units';
+import type {
+  UrlState,
+  UploadState,
+  State,
+  UploadedProfileInformation,
+} from './state';
+import type { CssPixels, StartEndRange, Milliseconds } from './units';
 
 export type DataSource =
   | 'none'
   | 'from-file'
+  //  This datasource is used to fetch a profile from Firefox. This used to be
+  //  handled by an addon, hence the name, but now this is all inside Firefox.
   | 'from-addon'
+  // This is an alias for 'from-addon' until we phase that one out. We
+  // introduced it when implementing the "delete profile" functionality, because
+  // `from-addon` didn't suit this use-case well. In the future we want to
+  // completely replace `from-addon` with this one.
+  | 'unpublished'
   | 'local'
   | 'public'
   | 'from-url'
@@ -120,6 +132,11 @@ export type CheckedSharingOptions = {|
   includePreferenceValues: boolean,
 |};
 
+export type RightClickedMarkerInfo = {|
+  +threadsKey: ThreadsKey,
+  +markerIndex: MarkerIndex,
+|};
+
 type ProfileAction =
   | {|
       +type: 'ROUTE_NOT_FOUND',
@@ -158,6 +175,11 @@ type ProfileAction =
       +type: 'CHANGE_SELECTED_MARKER',
       +threadsKey: ThreadsKey,
       +selectedMarker: MarkerIndex | null,
+    |}
+  | {|
+      +type: 'CHANGE_SELECTED_NETWORK_MARKER',
+      +threadsKey: ThreadsKey,
+      +selectedNetworkMarker: MarkerIndex | null,
     |}
   | {|
       +type: 'CHANGE_RIGHT_CLICKED_MARKER',
@@ -323,6 +345,7 @@ type UrlStateAction =
   | {|
       +type: 'PROFILE_PUBLISHED',
       +hash: string,
+      +profileName: string,
       +prePublishedState: State | null,
     |}
   | {| +type: 'CHANGE_SELECTED_TAB', +selectedTab: TabSlug |}
@@ -393,6 +416,7 @@ type UrlStateAction =
       +hash: string,
       +committedRanges: StartEndRange[] | null,
       +oldThreadIndexToNew: Map<ThreadIndex, ThreadIndex> | null,
+      +profileName: string,
       +prePublishedState: State | null,
     |}
   | {|
@@ -400,8 +424,15 @@ type UrlStateAction =
       +dataSource: DataSource,
     |}
   | {|
+      +type: 'CHANGE_MOUSE_TIME_POSITION',
+      +mouseTimePosition: Milliseconds | null,
+    |}
+  | {|
       +type: 'TOGGLE_RESOURCES_PANEL',
       +selectedThreadIndexes: Set<ThreadIndex>,
+    |}
+  | {|
+      +type: 'PROFILE_REMOTELY_DELETED',
     |};
 
 type IconsAction =
@@ -464,6 +495,11 @@ type DragAndDropAction =
       +type: 'UNREGISTER_DRAG_AND_DROP_OVERLAY',
     |};
 
+type CurrentProfileUploadedInformationAction = {|
+  +type: 'SET_CURRENT_PROFILE_UPLOADED_INFORMATION',
+  +uploadedProfileInformation: UploadedProfileInformation | null,
+|};
+
 export type Action =
   | ProfileAction
   | ReceiveProfileAction
@@ -472,4 +508,5 @@ export type Action =
   | UrlStateAction
   | IconsAction
   | PublishAction
-  | DragAndDropAction;
+  | DragAndDropAction
+  | CurrentProfileUploadedInformationAction;

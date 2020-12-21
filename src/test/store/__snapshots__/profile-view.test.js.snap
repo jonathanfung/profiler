@@ -77,11 +77,338 @@ Object {
     },
     "interval": 1,
     "logicalCPUs": 0,
+    "markerSchema": Array [
+      Object {
+        "data": Array [],
+        "display": Array [
+          "marker-chart",
+          "marker-table",
+          "timeline-memory",
+        ],
+        "name": "GCMajor",
+      },
+      Object {
+        "data": Array [],
+        "display": Array [
+          "marker-chart",
+          "marker-table",
+          "timeline-memory",
+        ],
+        "name": "GCMinor",
+      },
+      Object {
+        "data": Array [],
+        "display": Array [
+          "marker-chart",
+          "marker-table",
+          "timeline-memory",
+        ],
+        "name": "GCSlice",
+      },
+      Object {
+        "data": Array [],
+        "display": Array [
+          "marker-chart",
+          "marker-table",
+          "timeline-memory",
+        ],
+        "name": "CC",
+        "tooltipLabel": "Cycle Collect",
+      },
+      Object {
+        "data": Array [
+          Object {
+            "format": "string",
+            "key": "operation",
+            "label": "Operation",
+            "searchable": true,
+          },
+          Object {
+            "format": "string",
+            "key": "source",
+            "label": "Source",
+            "searchable": true,
+          },
+          Object {
+            "format": "file-path",
+            "key": "filename",
+            "label": "Filename",
+            "searchable": true,
+          },
+        ],
+        "display": Array [
+          "marker-chart",
+          "marker-table",
+        ],
+        "name": "FileIO",
+      },
+      Object {
+        "data": Array [
+          Object {
+            "format": "microseconds",
+            "key": "sampleStartTimeUs",
+            "label": "Sample start time",
+          },
+          Object {
+            "format": "microseconds",
+            "key": "sampleEndTimeUs",
+            "label": "Sample end time",
+          },
+        ],
+        "display": Array [
+          "marker-chart",
+          "marker-table",
+        ],
+        "name": "MediaSample",
+      },
+      Object {
+        "data": Array [
+          Object {
+            "format": "integer",
+            "key": "elementsTraversed",
+            "label": "Elements traversed",
+          },
+          Object {
+            "format": "integer",
+            "key": "elementsStyled",
+            "label": "Elements styled",
+          },
+          Object {
+            "format": "integer",
+            "key": "elementsMatched",
+            "label": "Elements matched",
+          },
+          Object {
+            "format": "integer",
+            "key": "stylesShared",
+            "label": "Styles shared",
+          },
+          Object {
+            "format": "integer",
+            "key": "stylesReused",
+            "label": "Styles reused",
+          },
+        ],
+        "display": Array [
+          "marker-chart",
+          "marker-table",
+          "timeline-overview",
+        ],
+        "name": "Styles",
+      },
+      Object {
+        "data": Array [
+          Object {
+            "format": "string",
+            "key": "prefName",
+            "label": "Name",
+          },
+          Object {
+            "format": "string",
+            "key": "prefKind",
+            "label": "Kind",
+          },
+          Object {
+            "format": "string",
+            "key": "prefType",
+            "label": "Type",
+          },
+          Object {
+            "format": "string",
+            "key": "prefValue",
+            "label": "Value",
+          },
+        ],
+        "display": Array [
+          "marker-chart",
+          "marker-table",
+        ],
+        "name": "PreferenceRead",
+      },
+      Object {
+        "chartLabel": "{marker.data.name}",
+        "data": Array [
+          Object {
+            "label": "Marker",
+            "value": "UserTiming",
+          },
+          Object {
+            "format": "string",
+            "key": "entryType",
+            "label": "Entry Type",
+          },
+          Object {
+            "label": "Description",
+            "value": "UserTiming is created using the DOM APIs performance.mark() and performance.measure().",
+          },
+        ],
+        "display": Array [
+          "marker-chart",
+          "marker-table",
+        ],
+        "name": "UserTiming",
+        "tableLabel": "{marker.data.name}",
+        "tooltipLabel": "{marker.data.name}",
+      },
+      Object {
+        "chartLabel": "{marker.name} — {marker.data.name}",
+        "data": Array [
+          Object {
+            "format": "string",
+            "key": "name",
+            "label": "Details",
+          },
+        ],
+        "display": Array [
+          "marker-chart",
+          "marker-table",
+        ],
+        "name": "Text",
+        "tableLabel": "{marker.name} — {marker.data.name}",
+      },
+      Object {
+        "data": Array [
+          Object {
+            "format": "string",
+            "key": "module",
+            "label": "Module",
+          },
+          Object {
+            "format": "string",
+            "key": "name",
+            "label": "Name",
+          },
+        ],
+        "display": Array [
+          "marker-table",
+        ],
+        "name": "Log",
+        "tableLabel": "({marker.data.module}) {marker.data.name}",
+      },
+      Object {
+        "chartLabel": "{marker.data.eventType}",
+        "data": Array [
+          Object {
+            "format": "duration",
+            "key": "latency",
+            "label": "Latency",
+          },
+        ],
+        "display": Array [
+          "marker-chart",
+          "marker-table",
+          "timeline-overview",
+        ],
+        "name": "DOMEvent",
+        "tableLabel": "{marker.data.eventType}",
+        "tooltipLabel": "{marker.data.eventType} — DOMEvent",
+      },
+      Object {
+        "data": Array [
+          Object {
+            "format": "string",
+            "key": "category",
+            "label": "Type",
+          },
+        ],
+        "display": Array [
+          "marker-chart",
+          "marker-table",
+          "timeline-overview",
+        ],
+        "name": "Paint",
+      },
+      Object {
+        "data": Array [
+          Object {
+            "format": "string",
+            "key": "category",
+            "label": "Type",
+          },
+        ],
+        "display": Array [
+          "marker-chart",
+          "marker-table",
+          "timeline-overview",
+        ],
+        "name": "Navigation",
+      },
+      Object {
+        "data": Array [
+          Object {
+            "format": "string",
+            "key": "category",
+            "label": "Type",
+          },
+        ],
+        "display": Array [
+          "marker-chart",
+          "marker-table",
+          "timeline-overview",
+        ],
+        "name": "Layout",
+      },
+      Object {
+        "chartLabel": "{marker.data.messageType}",
+        "data": Array [
+          Object {
+            "format": "string",
+            "key": "messageType",
+            "label": "Type",
+          },
+          Object {
+            "format": "string",
+            "key": "sync",
+            "label": "Sync",
+          },
+          Object {
+            "format": "string",
+            "key": "sendThreadName",
+            "label": "From",
+          },
+          Object {
+            "format": "string",
+            "key": "recvThreadName",
+            "label": "To",
+          },
+        ],
+        "display": Array [
+          "marker-chart",
+          "marker-table",
+          "timeline-ipc",
+        ],
+        "name": "IPC",
+        "tableLabel": "{marker.name} — {marker.data.messageType} — {marker.data.niceDirection}",
+        "tooltipLabel": "IPC — {marker.data.niceDirection}",
+      },
+      Object {
+        "data": Array [
+          Object {
+            "format": "string",
+            "key": "name",
+            "label": "Tick Reasons",
+          },
+        ],
+        "display": Array [
+          "marker-chart",
+          "marker-table",
+          "timeline-overview",
+        ],
+        "name": "RefreshDriverTick",
+      },
+      Object {
+        "data": Array [],
+        "display": Array [
+          "marker-table",
+        ],
+        "name": "Network",
+      },
+    ],
     "misc": "",
     "oscpu": "",
     "physicalCPUs": 0,
     "platform": "",
-    "preprocessedProfileVersion": 31,
+    "preprocessedProfileVersion": 33,
     "processType": 0,
     "product": "Firefox",
     "sourceURL": "",
@@ -89,7 +416,7 @@ Object {
     "startTime": 0,
     "symbolicated": true,
     "toolkit": "",
-    "version": 20,
+    "version": 22,
   },
   "pages": Array [
     Object {
@@ -747,8 +1074,6 @@ Object {
           "F",
           "Load 6: https://mozilla.org",
           "Load 7: https://mozilla.org",
-          "Bailout",
-          "Invalidate",
         ],
         "_stringToIndex": Map {
           "A" => 0,
@@ -759,8 +1084,6 @@ Object {
           "F" => 5,
           "Load 6: https://mozilla.org" => 6,
           "Load 7: https://mozilla.org" => 7,
-          "Bailout" => 8,
-          "Invalidate" => 9,
         },
       },
       "tid": 0,
@@ -1419,8 +1742,6 @@ Array [
         "F",
         "Load 6: https://mozilla.org",
         "Load 7: https://mozilla.org",
-        "Bailout",
-        "Invalidate",
       ],
       "_stringToIndex": Map {
         "A" => 0,
@@ -1431,8 +1752,6 @@ Array [
         "F" => 5,
         "Load 6: https://mozilla.org" => 6,
         "Load 7: https://mozilla.org" => 7,
-        "Bailout" => 8,
-        "Invalidate" => 9,
       },
     },
     "tid": 0,
@@ -1449,7 +1768,6 @@ Array [
     "end": null,
     "name": "D",
     "start": 3,
-    "title": null,
   },
   Object {
     "category": 0,
@@ -1457,7 +1775,6 @@ Array [
     "end": null,
     "name": "E",
     "start": 4,
-    "title": null,
   },
   Object {
     "category": 0,
@@ -1465,7 +1782,6 @@ Array [
     "end": null,
     "name": "F",
     "start": 5,
-    "title": null,
   },
   Object {
     "category": 0,
@@ -1484,7 +1800,6 @@ Array [
     "end": 7,
     "name": "Load 6: https://mozilla.org",
     "start": 6,
-    "title": null,
   },
   Object {
     "category": 0,
@@ -1503,7 +1818,6 @@ Array [
     "end": 8,
     "name": "Load 7: https://mozilla.org",
     "start": 7,
-    "title": null,
   },
 ]
 `;
@@ -1516,7 +1830,6 @@ Array [
     "end": null,
     "name": "A",
     "start": 0,
-    "title": null,
   },
   Object {
     "category": 0,
@@ -1524,7 +1837,6 @@ Array [
     "end": null,
     "name": "B",
     "start": 1,
-    "title": null,
   },
   Object {
     "category": 0,
@@ -1532,7 +1844,6 @@ Array [
     "end": null,
     "name": "C",
     "start": 2,
-    "title": null,
   },
   Object {
     "category": 0,
@@ -1540,7 +1851,6 @@ Array [
     "end": null,
     "name": "D",
     "start": 3,
-    "title": null,
   },
   Object {
     "category": 0,
@@ -1548,7 +1858,6 @@ Array [
     "end": null,
     "name": "E",
     "start": 4,
-    "title": null,
   },
   Object {
     "category": 0,
@@ -1556,7 +1865,6 @@ Array [
     "end": null,
     "name": "F",
     "start": 5,
-    "title": null,
   },
   Object {
     "category": 0,
@@ -1575,7 +1883,6 @@ Array [
     "end": 7,
     "name": "Load 6: https://mozilla.org",
     "start": 6,
-    "title": null,
   },
   Object {
     "category": 0,
@@ -1594,7 +1901,6 @@ Array [
     "end": 8,
     "name": "Load 7: https://mozilla.org",
     "start": 7,
-    "title": null,
   },
 ]
 `;
@@ -1656,118 +1962,6 @@ Array [
 ]
 `;
 
-exports[`snapshots of selectors/profile matches the last stored run of markerThreadSelectors.getProcessedRawMarkerTable 1`] = `
-Object {
-  "category": Array [
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-  ],
-  "data": Array [
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    Object {
-      "URI": "https://mozilla.org",
-      "endTime": 6.5,
-      "id": 6,
-      "pri": 0,
-      "startTime": 6,
-      "status": "STATUS_START",
-      "type": "Network",
-    },
-    Object {
-      "URI": "https://mozilla.org",
-      "contentType": "text/html",
-      "endTime": 7,
-      "id": 6,
-      "pri": 0,
-      "startTime": 6.5,
-      "status": "STATUS_STOP",
-      "type": "Network",
-    },
-    Object {
-      "URI": "https://mozilla.org",
-      "endTime": 7.5,
-      "id": 7,
-      "pri": 0,
-      "startTime": 7,
-      "status": "STATUS_START",
-      "type": "Network",
-    },
-    Object {
-      "URI": "https://mozilla.org",
-      "contentType": "text/html",
-      "endTime": 8,
-      "id": 7,
-      "pri": 0,
-      "startTime": 7.5,
-      "status": "STATUS_STOP",
-      "type": "Network",
-    },
-  ],
-  "endTime": Array [
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    6.5,
-    7,
-    7.5,
-    8,
-  ],
-  "length": 10,
-  "name": Array [
-    0,
-    1,
-    2,
-    3,
-    4,
-    5,
-    6,
-    6,
-    7,
-    7,
-  ],
-  "phase": Array [
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    1,
-    1,
-    1,
-    1,
-  ],
-  "startTime": Array [
-    0,
-    1,
-    2,
-    3,
-    4,
-    5,
-    6,
-    6.5,
-    7,
-    7.5,
-  ],
-}
-`;
-
 exports[`snapshots of selectors/profile matches the last stored run of markerThreadSelectors.getSearchFilteredMarkerIndexes 1`] = `
 Array [
   Object {
@@ -1776,7 +1970,6 @@ Array [
     "end": null,
     "name": "D",
     "start": 3,
-    "title": null,
   },
   Object {
     "category": 0,
@@ -1784,7 +1977,6 @@ Array [
     "end": null,
     "name": "E",
     "start": 4,
-    "title": null,
   },
   Object {
     "category": 0,
@@ -1792,7 +1984,6 @@ Array [
     "end": null,
     "name": "F",
     "start": 5,
-    "title": null,
   },
   Object {
     "category": 0,
@@ -1811,7 +2002,6 @@ Array [
     "end": 7,
     "name": "Load 6: https://mozilla.org",
     "start": 6,
-    "title": null,
   },
   Object {
     "category": 0,
@@ -1830,7 +2020,6 @@ Array [
     "end": 8,
     "name": "Load 7: https://mozilla.org",
     "start": 7,
-    "title": null,
   },
 ]
 `;
@@ -2718,11 +2907,12 @@ exports[`snapshots of selectors/profile matches the last stored run of selectedT
 Array [
   Object {
     "category": 1,
-    "data": null,
+    "data": Object {
+      "type": "Jank",
+    },
     "end": 55,
     "name": "Jank",
     "start": 5,
-    "title": "50.00ms event processing delay",
   },
 ]
 `;
@@ -4167,5 +4357,6 @@ Object {
     1,
   ],
   "selectedMarker": 1,
+  "selectedNetworkMarker": null,
 }
 `;

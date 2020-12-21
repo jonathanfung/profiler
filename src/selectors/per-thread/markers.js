@@ -11,7 +11,10 @@ import * as MarkerData from '../../profile-logic/marker-data';
 import * as MarkerTimingLogic from '../../profile-logic/marker-timing';
 import * as ProfileSelectors from '../profile';
 import { getRightClickedMarkerInfo } from '../right-clicked-marker';
+import { getLabelGetter } from '../../profile-logic/marker-schema';
+import { assertExhaustiveCheck } from '../../utils/flow';
 
+import type { ThreadSelectorsPerThread } from './thread';
 import type {
   RawMarkerTable,
   ThreadIndex,
@@ -40,7 +43,7 @@ export type MarkerSelectorsPerThread = $ReturnType<
  * Create the selectors for a thread that have to do with either markers.
  */
 export function getMarkerSelectorsPerThread(
-  threadSelectors: *,
+  threadSelectors: ThreadSelectorsPerThread,
   threadIndexes: Set<ThreadIndex>,
   threadsKey: ThreadsKey
 ) {
@@ -55,18 +58,15 @@ export function getMarkerSelectorsPerThread(
    * variants of the selectors that are created for specific views that have been
    * omitted, but the ordered steps below give the general picture.
    *
-   * 1. _getRawMarkerTable - Get the RawMarkerTable from the current thread.
-   * 2. getProcessedRawMarkerTable - Process marker payloads out of raw strings, and
-   *                                 other future processing needs. This returns a
-   *                                 RawMarkerTable still.
-   * 3a. _getDerivedMarkers        - Match up start/end markers, and start
+   * 1. _getRawMarkerTable         - Get the RawMarkerTable from the current thread.
+   * 2a. _getDerivedMarkers        - Match up start/end markers, and start
    *                                 returning the Marker[] type.
-   * 3b. _getDerivedJankMarkers    - Jank markers come from our samples data, and
+   * 2b. _getDerivedJankMarkers    - Jank markers come from our samples data, and
    *                                 this selector returns Marker structures out of
    *                                 the samples structure.
-   * 4. getFullMarkerList          - Concatenates and sorts all markers coming from
+   * 3. getFullMarkerList          - Concatenates and sorts all markers coming from
    *                                 different origin structures.
-   * 5. getFullMarkerListIndexes   - From the full marker list, generates an array
+   * 4. getFullMarkerListIndexes   - From the full marker list, generates an array
    *                                 containing the sequence of indexes for all markers.
    * 5. getCommittedRangeFilteredMarkerIndexes - Apply the committed range.
    * 6. getSearchFilteredMarkerIndexes         - Apply the search string
@@ -75,11 +75,6 @@ export function getMarkerSelectorsPerThread(
    * Selectors are commonly written using the utility filterMarkerIndexesCreator
    * (see below for more information about this function).
    */
-  const getProcessedRawMarkerTable: Selector<RawMarkerTable> = createSelector(
-    _getRawMarkerTable,
-    threadSelectors.getStringTable,
-    MarkerData.extractMarkerDataFromName
-  );
 
   const _getThreadId: Selector<number | void> = state =>
     threadSelectors.getThread(state).tid;
@@ -88,7 +83,7 @@ export function getMarkerSelectorsPerThread(
    * into our Marker structure that we use in the rest of our code. This is the
    * very start of our marker pipeline. */
   const getDerivedMarkerInfo: Selector<DerivedMarkerInfo> = createSelector(
-    getProcessedRawMarkerTable,
+    _getRawMarkerTable,
     threadSelectors.getStringTable,
     _getThreadId,
     threadSelectors.getThreadRange,
@@ -275,10 +270,17 @@ export function getMarkerSelectorsPerThread(
   /**
    * This selector selects only jank markers.
    */
-  const getJankMarkerIndexesForHeader: Selector<MarkerIndex[]> = createSelector(
+  const getTimelineJankMarkerIndexes: Selector<MarkerIndex[]> = createSelector(
     getMarkerGetter,
     getCommittedRangeAndTabFilteredMarkerIndexes,
-    filterMarkerIndexesCreator(marker => marker.name === 'Jank')
+    _getDerivedJankMarkers,
+    (getMarker, markerIndexes, derivedMarkers) => {
+      const type = derivedMarkers.length > 0 ? 'Jank' : 'BHR-detected hang';
+
+      return filterMarkerIndexesCreator(marker =>
+        Boolean(marker.data && marker.data.type === type)
+      )(getMarker, markerIndexes);
+    }
   );
 
   /**
@@ -407,12 +409,80 @@ export function getMarkerSelectorsPerThread(
   );
 
   /**
+   * This getter uses the marker schema to decide on the labels for tooltips.
+   */
+  const getMarkerTooltipLabelGetter: Selector<
+    (MarkerIndex) => string
+  > = createSelector(
+    getMarkerGetter,
+    ProfileSelectors.getMarkerSchema,
+    ProfileSelectors.getMarkerSchemaByName,
+    ProfileSelectors.getCategories,
+    () => 'tooltipLabel',
+    getLabelGetter
+  );
+
+  /**
+   * This getter uses the marker schema to decide on the labels for the marker table.
+   */
+  const getMarkerTableLabelGetter: Selector<
+    (MarkerIndex) => string
+  > = createSelector(
+    getMarkerGetter,
+    ProfileSelectors.getMarkerSchema,
+    ProfileSelectors.getMarkerSchemaByName,
+    ProfileSelectors.getCategories,
+    () => 'tableLabel',
+    getLabelGetter
+  );
+
+  /**
+   * This getter uses the marker schema to decide on the labels for the marker chart.
+   */
+  const _getMarkerChartLabelGetter: Selector<
+    (MarkerIndex) => string
+  > = createSelector(
+    getMarkerGetter,
+    ProfileSelectors.getMarkerSchema,
+    ProfileSelectors.getMarkerSchemaByName,
+    ProfileSelectors.getCategories,
+    () => 'chartLabel',
+    getLabelGetter
+  );
+
+  /**
+   * This selector is used by the generic marker context menu to decide what to copy.
+   */
+  const getMarkerLabelToCopyGetter: Selector<
+    (MarkerIndex) => string
+  > = state => {
+    const tabSlug = UrlState.getSelectedTab(state);
+    switch (tabSlug) {
+      case 'marker-chart':
+        return _getMarkerChartLabelGetter(state);
+      case 'marker-table':
+        return getMarkerTableLabelGetter(state);
+      case 'network-chart':
+      case 'calltree':
+      case 'flame-graph':
+      case 'stack-chart':
+      case 'js-tracer':
+        // Some of these may not actually happen, but all TabSlugs are included
+        // for completeness.
+        return getMarkerTooltipLabelGetter(state);
+      default:
+        throw assertExhaustiveCheck(tabSlug, 'Unhandled TabSlug type');
+    }
+  };
+
+  /**
    * This organizes the result of the previous selector in rows to be nicely
    * displayed in the marker chart.
    */
   const getMarkerChartTimingAndBuckets: Selector<MarkerTimingAndBuckets> = createSelector(
     getMarkerGetter,
     getMarkerChartMarkerIndexes,
+    _getMarkerChartLabelGetter,
     ProfileSelectors.getCategories,
     MarkerTimingLogic.getMarkerTimingAndBuckets
   );
@@ -468,6 +538,7 @@ export function getMarkerSelectorsPerThread(
   const getNetworkTrackTiming: Selector<MarkerTiming[]> = createSelector(
     getMarkerGetter,
     getNetworkMarkerIndexes,
+    _getMarkerChartLabelGetter,
     MarkerTimingLogic.getMarkerTiming
   );
 
@@ -478,6 +549,7 @@ export function getMarkerSelectorsPerThread(
   const getUserTimingMarkerTiming: Selector<MarkerTiming[]> = createSelector(
     getMarkerGetter,
     getUserTimingMarkerIndexes,
+    _getMarkerChartLabelGetter,
     MarkerTimingLogic.getMarkerTiming
   );
 
@@ -513,6 +585,21 @@ export function getMarkerSelectorsPerThread(
     return getMarker(selectedMarkerIndex);
   };
 
+  const getSelectedNetworkMarkerIndex: Selector<MarkerIndex | null> = state =>
+    threadSelectors.getViewOptions(state).selectedNetworkMarker;
+
+  // Do we need this function?
+  const getSelectedNetworkMarker: Selector<Marker | null> = state => {
+    const getMarker = getMarkerGetter(state);
+    const selectedNetworkMarkerIndex = getSelectedNetworkMarkerIndex(state);
+
+    if (selectedNetworkMarkerIndex === null) {
+      return null;
+    }
+
+    return getMarker(selectedNetworkMarkerIndex);
+  };
+
   const getRightClickedMarkerIndex: Selector<null | MarkerIndex> = createSelector(
     getRightClickedMarkerInfo,
     rightClickedMarkerInfo => {
@@ -536,8 +623,7 @@ export function getMarkerSelectorsPerThread(
 
   return {
     getMarkerGetter,
-    getJankMarkerIndexesForHeader,
-    getProcessedRawMarkerTable,
+    getTimelineJankMarkerIndexes,
     getDerivedMarkerInfo,
     getMarkerIndexToRawMarkerIndexes,
     getFullMarkerListIndexes,
@@ -546,6 +632,9 @@ export function getMarkerSelectorsPerThread(
     getAreMarkerPanelsEmptyInFullRange,
     getMarkerTableMarkerIndexes,
     getMarkerChartMarkerIndexes,
+    getMarkerTooltipLabelGetter,
+    getMarkerTableLabelGetter,
+    getMarkerLabelToCopyGetter,
     getMarkerChartTimingAndBuckets,
     getCommittedRangeFilteredMarkerIndexes,
     getCommittedRangeAndTabFilteredMarkerIndexes,
@@ -561,6 +650,8 @@ export function getMarkerSelectorsPerThread(
     getPreviewFilteredMarkerIndexes,
     getSelectedMarkerIndex,
     getSelectedMarker,
+    getSelectedNetworkMarkerIndex,
+    getSelectedNetworkMarker,
     getIsNetworkChartEmptyInFullRange,
     getUserTimingMarkerIndexes,
     getUserTimingMarkerTiming,

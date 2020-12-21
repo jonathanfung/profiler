@@ -8,7 +8,7 @@ import React from 'react';
 import { Provider } from 'react-redux';
 import { render } from '@testing-library/react';
 
-import WindowTitle from '../../components/shared/WindowTitle';
+import { WindowTitle } from '../../components/shared/WindowTitle';
 import {
   getEmptyProfile,
   getEmptyThread,
@@ -72,5 +72,24 @@ describe('WindowTitle', () => {
 
     store.dispatch(changeProfileName('awesome profile'));
     expect(document.title).toBe('awesome profile – Firefox Profiler');
+  });
+
+  it('shows profile name when formatedmetastring is empty null', () => {
+    const profile = getEmptyProfile();
+    profile.threads.push(getEmptyThread());
+    Object.assign(profile.meta, {
+      oscpu: '',
+      platform: '',
+      toolkit: '',
+      product: '',
+    });
+    const store = storeWithProfile(profile);
+    render(
+      <Provider store={store}>
+        <WindowTitle />
+      </Provider>
+    );
+
+    expect(document.title).toBe('1/1/1970, 12:00:00 AM UTC – Firefox Profiler');
   });
 });

@@ -6,14 +6,17 @@
 
 import React, { PureComponent } from 'react';
 import memoize from 'memoize-immutable';
+import classNames from 'classnames';
 
 import { InnerNavigationLink } from 'firefox-profiler/components/shared/InnerNavigationLink';
-import {
-  listAllProfileData,
-  type ProfileData,
-} from 'firefox-profiler/app-logic/published-profiles-store';
-import { formatSeconds } from 'firefox-profiler/utils/format-numbers';
 import { ProfileMetaInfoSummary } from 'firefox-profiler/components/shared/ProfileMetaInfoSummary';
+import { ProfileDeleteButton } from './ProfileDeleteButton';
+
+import {
+  listAllUploadedProfileInformationFromDb,
+  type UploadedProfileInformation,
+} from 'firefox-profiler/app-logic/uploaded-profiles-db';
+import { formatSeconds } from 'firefox-profiler/utils/format-numbers';
 
 import type { Milliseconds, StartEndRange } from 'firefox-profiler/types/units';
 
@@ -70,104 +73,219 @@ function _formatRange(range: StartEndRange): string {
 }
 
 type PublishedProfileProps = {|
-  +profileData: ProfileData,
+  +onProfileDelete: () => void,
+  +uploadedProfileInformation: UploadedProfileInformation,
   +nowTimestamp: Milliseconds,
+  +withActionButtons: boolean,
 |};
 
-function PublishedProfile({
-  profileData,
-  nowTimestamp,
-}: PublishedProfileProps) {
-  let { urlPath } = profileData;
-  if (!urlPath.startsWith('/')) {
-    urlPath = '/' + urlPath;
+type PublishedProfileState = {|
+  +confirmDialogIsOpen: boolean,
+|};
+
+/**
+ * This implements one line in the list of published profiles.
+ */
+class PublishedProfile extends React.PureComponent<
+  PublishedProfileProps,
+  PublishedProfileState
+> {
+  state = {
+    confirmDialogIsOpen: false,
+  };
+
+  onOpenConfirmDialog = () => {
+    this.setState({ confirmDialogIsOpen: true });
+  };
+
+  onCloseConfirmDialog = () => {
+    this.setState({ confirmDialogIsOpen: false });
+  };
+
+  onCloseSuccessMessage = () => {
+    this.props.onProfileDelete();
+  };
+
+  render() {
+    const {
+      uploadedProfileInformation,
+      nowTimestamp,
+      withActionButtons,
+    } = this.props;
+    const { confirmDialogIsOpen } = this.state;
+
+    let { urlPath } = uploadedProfileInformation;
+    if (!urlPath.startsWith('/')) {
+      urlPath = '/' + urlPath;
+    }
+    const slicedProfileToken = uploadedProfileInformation.profileToken.slice(
+      0,
+      6
+    );
+    const profileName = uploadedProfileInformation.name
+      ? uploadedProfileInformation.name
+      : `Profile #${slicedProfileToken}`;
+    const smallProfileName = uploadedProfileInformation.name
+      ? uploadedProfileInformation.name
+      : '#' + slicedProfileToken;
+
+    return (
+      <li
+        className={classNames('publishedProfilesListItem', {
+          publishedProfilesListItem_ConfirmDialogIsOpen: confirmDialogIsOpen,
+        })}
+      >
+        <a
+          className="publishedProfilesLink"
+          href={urlPath}
+          title={`Click here to load profile ${smallProfileName}`}
+        >
+          <div className="publishedProfilesDate">
+            {_formatDate(
+              uploadedProfileInformation.publishedDate,
+              nowTimestamp
+            )}
+          </div>
+          <div className="publishedProfilesInfo">
+            <div className="publishedProfilesName">
+              <strong>{profileName}</strong> (
+              {_formatRange(uploadedProfileInformation.publishedRange)})
+            </div>
+            <ProfileMetaInfoSummary meta={uploadedProfileInformation.meta} />
+          </div>
+        </a>
+        {withActionButtons ? (
+          <div className="publishedProfilesActionButtons">
+            {uploadedProfileInformation.jwtToken ? (
+              <ProfileDeleteButton
+                buttonClassName="publishedProfilesDeleteButton"
+                profileName={profileName}
+                smallProfileName={smallProfileName}
+                jwtToken={uploadedProfileInformation.jwtToken}
+                profileToken={uploadedProfileInformation.profileToken}
+                onOpenConfirmDialog={this.onOpenConfirmDialog}
+                onCloseConfirmDialog={this.onCloseConfirmDialog}
+                onCloseSuccessMessage={this.onCloseSuccessMessage}
+              />
+            ) : (
+              <button
+                className="publishedProfilesDeleteButton photon-button photon-button-default"
+                type="button"
+                title="This profile cannot be deleted because we lack the authorization information."
+                disabled
+              >
+                Delete
+              </button>
+            )}
+          </div>
+        ) : null}
+      </li>
+    );
   }
-  const location = `${window.location.origin}/${urlPath}`;
-  return (
-    <li className="publishedProfilesListItem">
-      <a className="publishedProfilesLink" href={location}>
-        <div className="publishedProfilesDate">
-          {_formatDate(profileData.publishedDate, nowTimestamp)}
-        </div>
-        <div className="publishedProfilesName">
-          <strong>
-            {profileData.name
-              ? profileData.name
-              : `Profile #${profileData.profileToken.slice(0, 6)}`}
-          </strong>{' '}
-          ({_formatRange(profileData.publishedRange)})
-        </div>
-        <ProfileMetaInfoSummary meta={profileData.meta} />
-      </a>
-    </li>
-  );
 }
 
 type Props = {|
+  withActionButtons: boolean,
   limit?: number,
 |};
 
 type State = {|
-  profileDataList: null | ProfileData[],
+  uploadedProfileInformationList: null | UploadedProfileInformation[],
 |};
 
 export class ListOfPublishedProfiles extends PureComponent<Props, State> {
+  _isMounted = false;
+
   state = {
-    profileDataList: null,
+    uploadedProfileInformationList: null,
+  };
+
+  _refreshList = async () => {
+    const uploadedProfileInformationList = await listAllUploadedProfileInformationFromDb();
+    if (this._isMounted) {
+      // It isn't ideal to use a setState here, but this is the only way.
+      this.setState({
+        // We want to display the list with the most recent uploaded profile first.
+        uploadedProfileInformationList: uploadedProfileInformationList.reverse(),
+      });
+    }
   };
 
   async componentDidMount() {
-    const profileDataList = await listAllProfileData();
-
-    // It isn't ideal to use a setState here, but this is the only way.
-    // eslint-disable-next-line react/no-did-mount-set-state
-    this.setState({
-      // We want to display the list with the most recent uploaded profile first.
-      profileDataList: profileDataList.reverse(),
-    });
+    this._isMounted = true;
+    this._refreshList();
+    window.addEventListener('focus', this._refreshList);
   }
 
-  render() {
-    const { limit } = this.props;
-    const { profileDataList } = this.state;
+  componentWillUnmount() {
+    this._isMounted = false;
+    window.removeEventListener('focus', this._refreshList);
+  }
 
-    if (!profileDataList) {
+  onProfileDelete = () => {
+    this._refreshList();
+  };
+
+  render() {
+    const { limit, withActionButtons } = this.props;
+    const { uploadedProfileInformationList } = this.state;
+
+    if (!uploadedProfileInformationList) {
       return null;
     }
 
-    if (!profileDataList.length) {
+    if (!uploadedProfileInformationList.length) {
       return (
-        <p className="photon-body-30">No profile has been published yet!</p>
+        <p className="photon-body-30">No profile has been uploaded yet!</p>
       );
     }
 
-    const reducedProfileDataList = limit
-      ? profileDataList.slice(0, limit)
-      : profileDataList;
+    const reducedUploadedProfileInformationList = limit
+      ? uploadedProfileInformationList.slice(0, limit)
+      : uploadedProfileInformationList;
 
     const profilesRestCount =
-      profileDataList.length - reducedProfileDataList.length;
+      uploadedProfileInformationList.length -
+      reducedUploadedProfileInformationList.length;
+
+    let profileRestLabel;
+    if (profilesRestCount > 0) {
+      profileRestLabel = (
+        <>See and manage all your recordings ({profilesRestCount} more)</>
+      );
+    } else {
+      profileRestLabel =
+        uploadedProfileInformationList.length > 1 ? (
+          <>Manage these recordings</>
+        ) : (
+          <>Manage this recording</>
+        );
+    }
 
     const nowTimestamp = Date.now();
 
     return (
       <>
         <ul className="publishedProfilesList">
-          {reducedProfileDataList.map(profileData => (
-            <PublishedProfile
-              key={profileData.profileToken}
-              profileData={profileData}
-              nowTimestamp={nowTimestamp}
-            />
-          ))}
+          {reducedUploadedProfileInformationList.map(
+            uploadedProfileInformation => (
+              <PublishedProfile
+                onProfileDelete={this.onProfileDelete}
+                key={uploadedProfileInformation.profileToken}
+                uploadedProfileInformation={uploadedProfileInformation}
+                nowTimestamp={nowTimestamp}
+                withActionButtons={withActionButtons}
+              />
+            )
+          )}
         </ul>
-        {profilesRestCount > 0 ? (
+        {withActionButtons ? null : (
           <p>
             <InnerNavigationLink dataSource="uploaded-recordings">
-              See all your recordings ({profilesRestCount} more)
+              {profileRestLabel}
             </InnerNavigationLink>
           </p>
-        ) : null}
+        )}
       </>
     );
   }

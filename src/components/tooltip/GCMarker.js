@@ -13,7 +13,7 @@ import {
   formatMicroseconds,
   formatMilliseconds,
   formatValueTotal,
-} from '../../utils/format-numbers';
+} from 'firefox-profiler/utils/format-numbers';
 
 import { TooltipDetail, type TooltipDetailComponent } from './TooltipDetails';
 
@@ -342,7 +342,7 @@ export function getGCSliceDetails(
 
 type PhaseTimeTuple = {| name: string, time: Microseconds |};
 
-function _markerDetailPhase(p: PhaseTimeTuple): * {
+function _markerDetailPhase(p: PhaseTimeTuple) {
   return (
     <TooltipDetail key={'GC Phase - ' + p.name} label={'Phase ' + p.name}>
       {formatMilliseconds(p.time / 1000)}

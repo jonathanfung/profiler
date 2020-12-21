@@ -16,7 +16,7 @@ import type {
   CheckedSharingOptions,
 } from './actions';
 import type { TabSlug } from '../app-logic/tabs-handling';
-import type { StartEndRange, CssPixels } from './units';
+import type { StartEndRange, CssPixels, Milliseconds } from './units';
 import type { Profile, ThreadIndex, Pid, BrowsingContextID } from './profile';
 
 import type {
@@ -34,14 +34,22 @@ import type { TransformStacksPerThread } from './transforms';
 import type JSZip from 'jszip';
 import type { IndexIntoZipFileTable } from '../profile-logic/zip-files';
 import type { PathSet } from '../utils/path.js';
+import type { UploadedProfileInformation as ImportedUploadedProfileInformation } from 'firefox-profiler/app-logic/uploaded-profiles-db';
 
 export type Reducer<T> = (T | void, Action) => T;
+
+// This type is defined in uploaded-profiles-db.js because it is very tied to
+// the data stored in our local IndexedDB, and we don't want to change it
+// lightly, without changing the DB code.
+// We reexport this type here mostly for easier access.
+export type UploadedProfileInformation = ImportedUploadedProfileInformation;
 
 export type SymbolicationStatus = 'DONE' | 'SYMBOLICATING';
 export type ThreadViewOptions = {|
   +selectedCallNodePath: CallNodePath,
   +expandedCallNodePaths: PathSet,
   +selectedMarker: MarkerIndex | null,
+  +selectedNetworkMarker: MarkerIndex | null,
 |};
 
 export type ThreadViewOptionsPerThreads = { [ThreadsKey]: ThreadViewOptions };
@@ -94,6 +102,7 @@ export type ProfileViewState = {
     rightClickedTrack: TrackReference | null,
     rightClickedCallNode: RightClickedCallNode | null,
     rightClickedMarker: RightClickedMarker | null,
+    mouseTimePosition: Milliseconds | null,
   |},
   +profile: Profile | null,
   +full: FullProfileViewState,
@@ -178,6 +187,7 @@ export type AppState = {|
   +isDragAndDropDragging: boolean,
   +isDragAndDropOverlayRegistered: boolean,
   +experimental: ExperimentalFlags,
+  +currentProfileUploadedInformation: UploadedProfileInformation | null,
 |};
 
 export type UploadPhase =

@@ -3,7 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 // @flow
 import { storeWithProfile } from '../fixtures/stores';
-import { selectedThreadSelectors } from '../../selectors/per-thread';
+import {
+  selectedThreadSelectors,
+  getMarkerSchemaByName,
+} from 'firefox-profiler/selectors';
 import {
   getUserTiming,
   getProfileWithMarkers,
@@ -100,12 +103,7 @@ describe('selectors/getMarkerChartTimingAndBuckets', function() {
   describe('markers that are crossing the profile start or end', function() {
     it('renders properly markers starting before profile start', function() {
       const markerTiming = getMarkerChartTimingAndBuckets([
-        [
-          'Rasterize',
-          1,
-          null,
-          { category: 'Paint', interval: 'end', type: 'tracing' },
-        ],
+        ['Rasterize', 1, null, { category: 'Paint', type: 'tracing' }],
       ]);
       expect(markerTiming).toEqual([
         'Idle',
@@ -122,94 +120,6 @@ describe('selectors/getMarkerChartTimingAndBuckets', function() {
         },
       ]);
     });
-  });
-});
-
-describe('getProcessedRawMarkerTable', function() {
-  function setup(testMarkers) {
-    const profile = getProfileWithMarkers(testMarkers);
-    const { getState } = storeWithProfile(profile);
-    return selectedThreadSelectors.getProcessedRawMarkerTable(getState());
-  }
-
-  it('can process Invalidation markers', function() {
-    const markers = setup([
-      ['Invalidate http://mozilla.com/script.js:1234', 10, null],
-      ['Invalidate self-hosted:2345', 20, null],
-      ['Invalidate resource://foo -> resource://bar:3456', 30, null],
-      ['Invalidate moz-extension://<URL>', 40, null],
-    ]);
-    expect(markers.startTime).toEqual([10, 20, 30, 40]);
-    expect(markers.data).toEqual([
-      {
-        type: 'Invalidation',
-        url: 'http://mozilla.com/script.js',
-        line: '1234',
-      },
-      {
-        type: 'Invalidation',
-        url: 'self-hosted',
-        line: '2345',
-      },
-      {
-        type: 'Invalidation',
-        url: 'resource://foo -> resource://bar',
-        line: '3456',
-      },
-      {
-        type: 'Invalidation',
-        url: 'moz-extension://<URL>',
-        line: null,
-      },
-    ]);
-  });
-
-  it('can process Bailout markers', function() {
-    const markers = setup([
-      [
-        'Bailout_ShapeGuard after getelem on line 3666 of resource://foo.js -> resource://bar.js:3662',
-        10,
-        null,
-      ],
-      [
-        'Bailout_TypeBarrierV at jumptarget on line 1021 of self-hosted:970',
-        20,
-        null,
-      ],
-      // Also handle sanitized profiles where URLs have been redacted
-      [
-        'Bailout_ShapeGuard at jumptarget on line 7 of moz-extension://<URL>',
-        30,
-        null,
-      ],
-    ]);
-    expect(markers.startTime).toEqual([10, 20, 30]);
-    expect(markers.data).toEqual([
-      {
-        type: 'Bailout',
-        bailoutType: 'ShapeGuard',
-        where: 'after getelem',
-        script: 'resource://foo.js -> resource://bar.js',
-        bailoutLine: 3666,
-        functionLine: 3662,
-      },
-      {
-        type: 'Bailout',
-        bailoutType: 'TypeBarrierV',
-        where: 'at jumptarget',
-        script: 'self-hosted',
-        bailoutLine: 1021,
-        functionLine: 970,
-      },
-      {
-        type: 'Bailout',
-        bailoutType: 'ShapeGuard',
-        where: 'at jumptarget',
-        script: 'moz-extension://<URL>',
-        bailoutLine: 7,
-        functionLine: null,
-      },
-    ]);
   });
 });
 
@@ -241,12 +151,7 @@ describe('memory markers', function() {
         ['DOMEvent', 0, null],
         ['Navigation', 1, null],
         ['Paint', 2, null],
-        [
-          'IdleForgetSkippable',
-          3,
-          4,
-          { type: 'tracing', category: 'CC', interval: 'end' },
-        ],
+        ['IdleForgetSkippable', 3, 4, { type: 'tracing', category: 'CC' }],
         ['GCMinor', 5, null, { type: 'GCMinor', nursery: any }],
         ['GCMajor', 6, null, { type: 'GCMajor', timings: any }],
         ['GCSlice', 7, null, { type: 'GCSlice', timings: any }],
@@ -334,7 +239,6 @@ describe('selectors/getCommittedRangeAndTabFilteredMarkerIndexes', function() {
           {
             type: 'tracing',
             category: 'Navigation',
-            interval: 'start',
             innerWindowID,
           },
         ],
@@ -346,7 +250,6 @@ describe('selectors/getCommittedRangeAndTabFilteredMarkerIndexes', function() {
           {
             type: 'tracing',
             category: 'Navigation',
-            interval: 'start',
             innerWindowID: 111111,
           },
         ],
@@ -357,7 +260,6 @@ describe('selectors/getCommittedRangeAndTabFilteredMarkerIndexes', function() {
           {
             type: 'tracing',
             category: 'Navigation',
-            interval: 'start',
             innerWindowID,
           },
         ],
@@ -431,10 +333,24 @@ describe('Marker schema filtering', function() {
       ['payload no schema', 0, null, { type: 'no schema marker' }],
       ['RefreshDriverTick', 0, null, { type: 'Text', name: 'RefreshDriverTick' }],
       ['UserTiming',        5, 6,    { type: 'UserTiming', name: 'name', entryType: 'mark' }],
+      // The following is a tracing marker without a schema attached, this was a
+      // regression reported in Bug 1678698.
+      // $FlowExpectError - Invalid payload by our type system.
+      ['RandomTracingMarker', 7, 8,  { type: 'tracing', category: 'RandomTracingMarker' }],
       ...getNetworkMarkers(),
     ]);
     const { getState } = storeWithProfile(profile);
     const getMarker = selectedThreadSelectors.getMarkerGetter(getState());
+    const markerSchemaByName = getMarkerSchemaByName(getState());
+
+    if (markerSchemaByName.RandomTracingMarker) {
+      throw new Error(
+        'This test assumes that the RandomTracingMarker marker has no schema. If this ' +
+          'schema were added somewhere else, then rename RandomTracingMarker to ' +
+          'something else. '
+      );
+    }
+
     return selector(getState())
       .map(getMarker)
       .map(marker => marker.name);
@@ -449,6 +365,7 @@ describe('Marker schema filtering', function() {
       'RefreshDriverTick',
       'Load 0: https://mozilla.org',
       'UserTiming',
+      'RandomTracingMarker',
     ]);
   });
 
@@ -460,6 +377,7 @@ describe('Marker schema filtering', function() {
       'payload no schema',
       'RefreshDriverTick',
       'UserTiming',
+      'RandomTracingMarker',
     ]);
   });
 

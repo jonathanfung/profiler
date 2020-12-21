@@ -859,7 +859,7 @@ exports[`MarkerChart shows a tooltip when hovering 1`] = `
 <div
   class="tooltip"
   data-testid="tooltip"
-  style="left: 200.36363636363637px; top: 54px;"
+  style="--tooltip-detail-max-width: 600px; left: 200.36363636363637px; top: 54px;"
 >
   <div
     class="tooltipMarker"
@@ -892,7 +892,11 @@ exports[`MarkerChart shows a tooltip when hovering 1`] = `
         Marker
         :
       </div>
-      UserTiming
+      <div
+        class="tooltipDetailsDescription"
+      >
+        UserTiming
+      </div>
       <div
         class="tooltipLabel"
       >
@@ -906,7 +910,11 @@ exports[`MarkerChart shows a tooltip when hovering 1`] = `
         Description
         :
       </div>
-      UserTiming is created using the DOM APIs performance.mark() and performance.measure().
+      <div
+        class="tooltipDetailsDescription"
+      >
+        UserTiming is created using the DOM APIs performance.mark() and performance.measure().
+      </div>
       <div
         class="tooltipLabel"
       >

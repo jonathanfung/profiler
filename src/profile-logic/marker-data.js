@@ -27,10 +27,8 @@ import type {
   MarkerIndex,
   IPCSharedData,
   IPCMarkerPayload,
-  BailoutPayload,
   NetworkPayload,
   PrefMarkerPayload,
-  InvalidationPayload,
   FileIoPayload,
   TextMarkerPayload,
   StartEndRange,
@@ -42,13 +40,6 @@ import type {
 } from 'firefox-profiler/types';
 
 import type { UniqueStringArray } from '../utils/unique-string-array';
-
-function _formatIPCMarkerDirection(data) {
-  if (data.direction === 'sending') {
-    return `sent to ${data.recvThreadName || data.otherPid}`;
-  }
-  return `received from ${data.sendThreadName || data.otherPid}`;
-}
 
 /**
  * Jank instances are created from responsiveness values. Responsiveness is a profiler
@@ -79,15 +70,14 @@ export function deriveJankMarkers(
     jankInstances.push({
       start: lastTimestamp - lastResponsiveness,
       end: lastTimestamp,
-      title: `${lastResponsiveness.toFixed(2)}ms event processing delay`,
       name: 'Jank',
       category: otherCategoryIndex,
-      data: null,
+      data: { type: 'Jank' },
     });
 
   let lastResponsiveness: number = 0;
   let lastTimestamp: number = 0;
-  const jankInstances = [];
+  const jankInstances: Marker[] = [];
   for (let i = 0; i < samples.length; i++) {
     let currentResponsiveness;
     if (samples.eventDelay) {
@@ -237,103 +227,6 @@ export function getTabFilteredMarkerIndexes(
 
     if (data && data.innerWindowID && relevantPages.has(data.innerWindowID)) {
       newMarkers.push(markerIndex);
-    }
-  }
-
-  return newMarkers;
-}
-
-/**
- * This function takes a marker that packs in a marker payload into the string of the
- * name. This extracts that and turns it into a payload.
- */
-export function extractMarkerDataFromName(
-  markers: RawMarkerTable,
-  stringTable: UniqueStringArray
-): RawMarkerTable {
-  const newMarkers: RawMarkerTable = {
-    data: markers.data.slice(),
-    name: markers.name.slice(),
-    startTime: markers.startTime.slice(),
-    endTime: markers.endTime.slice(),
-    phase: markers.phase.slice(),
-    category: markers.category.slice(),
-    length: markers.length,
-  };
-
-  // Match: "Bailout_MonitorTypes after add on line 1013 of self-hosted:1008"
-  // Match: "Bailout_TypeBarrierO at jumptarget on line 1490 of resource://devtools/shared/base-loader.js -> resource://devtools/client/shared/vendor/immutable.js:1484"
-  // Match: "Bailout_ShapeGuard at jumptarget on line 7 of moz-extension://<URL>"
-  const bailoutRegex =
-    // Capture groups:
-    //       type   afterAt    where        bailoutLine  script     functionLine
-    //        ↓     ↓          ↓                  ↓        ↓        ↓
-    /^Bailout_(\w+) (after|at) ([\w _-]+) on line (\d+) of (.*?)(?::(\d+))?$/;
-  //                                                               ↑
-  // Colon in non-capturing group which only matches when functionLine is present
-
-  // Match: "Invalidate resource://devtools/shared/base-loader.js -> resource://devtools/client/shared/vendor/immutable.js:3662"
-  // Match: "Invalidate self-hosted:4032"
-  // Match: "Invalidate moz-extension://<URL>"
-  const invalidateRegex =
-    // Capture groups:
-    //         url        line
-    //           ↓        ↓
-    /^Invalidate (.*?)(?::(\d+))?$/;
-
-  const bailoutStringIndex = stringTable.indexForString('Bailout');
-  const invalidationStringIndex = stringTable.indexForString('Invalidate');
-  for (let markerIndex = 0; markerIndex < markers.length; markerIndex++) {
-    const nameIndex = markers.name[markerIndex];
-    const name = stringTable.getString(nameIndex);
-    let matchFound = false;
-    if (name.startsWith('Bailout_')) {
-      matchFound = true;
-      const match = name.match(bailoutRegex);
-      if (!match) {
-        console.error(`Could not match regex for bailout: "${name}"`);
-      } else {
-        const [
-          ,
-          type,
-          afterAt,
-          where,
-          bailoutLine,
-          script,
-          functionLine,
-        ] = match;
-        newMarkers.name[markerIndex] = bailoutStringIndex;
-        newMarkers.data[markerIndex] = ({
-          type: 'Bailout',
-          bailoutType: type,
-          where: afterAt + ' ' + where,
-          script: script,
-          bailoutLine: +bailoutLine,
-          functionLine: functionLine === undefined ? null : +functionLine,
-        }: BailoutPayload);
-      }
-    } else if (name.startsWith('Invalidate ')) {
-      matchFound = true;
-      const match = name.match(invalidateRegex);
-      if (!match) {
-        console.error(`Could not match regex for invalidation: "${name}"`);
-      } else {
-        const [, url, line] = match;
-        newMarkers.name[markerIndex] = invalidationStringIndex;
-        newMarkers.data[markerIndex] = ({
-          type: 'Invalidation',
-          url,
-          line: line === undefined ? null : line,
-        }: InvalidationPayload);
-      }
-    }
-    if (matchFound && markers.data[markerIndex]) {
-      console.error(
-        "A marker's payload was rewritten based off the text content of the marker. " +
-          "profiler.firefox.com assumed that the payload was empty, but it turns out it wasn't. " +
-          'This is most likely an error and should be fixed. The marker name is:',
-        name
-      );
     }
   }
 
@@ -513,7 +406,7 @@ export function correlateIPCMarkers(threads: Thread[]): IPCMarkerCorrelations {
 export function deriveMarkersFromRawMarkerTable(
   rawMarkers: RawMarkerTable,
   stringTable: UniqueStringArray,
-  threadId: number,
+  threadId: number | void,
   threadRange: StartEndRange,
   ipcCorrelations: IPCMarkerCorrelations
 ): DerivedMarkerInfo {
@@ -613,7 +506,6 @@ export function deriveMarkersFromRawMarkerTable(
                 start: startStartTime,
                 end: endEndTime,
                 name: stringTable.getString(name),
-                title: null,
                 category,
                 data: {
                   ...endData,
@@ -637,7 +529,6 @@ export function deriveMarkersFromRawMarkerTable(
                 start,
                 end,
                 name: stringTable.getString(name),
-                title: null,
                 category,
                 data: {
                   ...endData,
@@ -673,7 +564,6 @@ export function deriveMarkersFromRawMarkerTable(
               start: previousStartTime,
               end: thisStartTime,
               name: 'CompositorScreenshot',
-              title: null,
               category,
               data,
             });
@@ -685,7 +575,11 @@ export function deriveMarkersFromRawMarkerTable(
         }
 
         case 'IPC': {
-          const sharedData = ipcCorrelations.get(threadId, rawMarkerIndex);
+          const sharedData = ipcCorrelations.get(
+            // Older profiles don't have a tid, but they also don't have the IPC markers.
+            threadId || 0,
+            rawMarkerIndex
+          );
           if (!sharedData) {
             // Since shared data is generated for every IPC message, this should
             // never happen unless something has gone catastrophically wrong.
@@ -725,14 +619,20 @@ export function deriveMarkersFromRawMarkerTable(
             incomplete = false;
           }
 
-          const allData = { ...data, ...sharedData };
+          const allData = {
+            ...data,
+            ...sharedData,
+            niceDirection:
+              data.direction === 'sending'
+                ? `sent to ${sharedData.recvThreadName || data.otherPid}`
+                : `received from ${sharedData.sendThreadName || data.otherPid}`,
+          };
 
           // TODO - How do I get the other rawMarkerIndexes
           addMarker([rawMarkerIndex], {
             start,
             end,
             name,
-            title: `IPC — ${_formatIPCMarkerDirection(allData)}`,
             category,
             data: allData,
             incomplete,
@@ -755,7 +655,6 @@ export function deriveMarkersFromRawMarkerTable(
           ),
           end: null,
           name: stringTable.getString(name),
-          title: null,
           category,
           data,
         });
@@ -775,7 +674,6 @@ export function deriveMarkersFromRawMarkerTable(
             start: startTime,
             end: endTime,
             name: stringTable.getString(name),
-            title: null,
             category,
             data,
           });
@@ -816,7 +714,6 @@ export function deriveMarkersFromRawMarkerTable(
               start,
               name: stringTable.getString(name),
               end: endTime,
-              title: null,
               category,
               data: rawMarkers.data[startIndex],
             });
@@ -838,7 +735,6 @@ export function deriveMarkersFromRawMarkerTable(
               start,
               name: stringTable.getString(name),
               end: endTime,
-              title: null,
               category,
               data,
               incomplete: true,
@@ -867,7 +763,6 @@ export function deriveMarkersFromRawMarkerTable(
         name: stringTable.getString(rawMarkers.name[startIndex]),
         data: rawMarkers.data[startIndex],
         category: rawMarkers.category[startIndex],
-        title: null,
         incomplete: true,
       });
     }
@@ -882,7 +777,6 @@ export function deriveMarkersFromRawMarkerTable(
       start: startTime,
       end: Math.max(endOfThread, startTime),
       name: stringTable.getString(rawMarkers.name[startIndex]),
-      title: null,
       category: rawMarkers.category[startIndex],
       data: rawMarkers.data[startIndex],
       incomplete: true,
@@ -901,7 +795,6 @@ export function deriveMarkersFromRawMarkerTable(
       name: 'CompositorScreenshot',
       category: rawMarkers.category[previousScreenshotMarker],
       data: rawMarkers.data[previousScreenshotMarker],
-      title: null,
     });
   }
 
@@ -1272,89 +1165,6 @@ export function sanitizeTextMarker(
     ...payload,
     name: removeURLs(payload.name),
   };
-}
-
-export function getMarkerFullDescription(marker: Marker) {
-  let description = marker.name;
-
-  if (marker.data) {
-    const data = marker.data;
-    switch (data.type) {
-      case 'tracing':
-        if (typeof data.category === 'string') {
-          if (data.category === 'log' && description.length > 100) {
-            description = description.substring(0, 100) + '...';
-          } else if (data.category === 'DOMEvent') {
-            description = data.eventType;
-          }
-        }
-        break;
-      case 'UserTiming':
-        description = data.name;
-        break;
-      case 'FileIO':
-        if (data.source) {
-          description = `(${data.source}) `;
-        }
-        description += data.operation;
-        if (data.filename) {
-          description = data.operation
-            ? `${description} — ${data.filename}`
-            : data.filename;
-        }
-        break;
-      case 'Text':
-        description += ` — ${data.name}`;
-        break;
-      case 'Log':
-        description = `(${data.module}) ${data.name}`;
-        break;
-      case 'IPC':
-        description = `${data.messageType} — ${_formatIPCMarkerDirection(
-          data
-        )}`;
-        break;
-      default:
-    }
-  }
-  return description;
-}
-
-export function getMarkerCategory(marker: Marker) {
-  let category = 'unknown';
-  if (marker.data) {
-    const data = marker.data;
-
-    if (typeof data.category === 'string') {
-      category = data.category;
-    }
-
-    switch (data.type) {
-      case 'UserTiming':
-        category = marker.name;
-        break;
-      case 'FileIO':
-        category = data.type;
-        break;
-      case 'Bailout':
-        category = 'Bailout';
-        break;
-      case 'Network':
-        category = 'Network';
-        break;
-      case 'Text':
-        category = 'Text';
-        break;
-      case 'Log':
-        category = 'Log';
-        break;
-      case 'IPC':
-        category = data.direction === 'sending' ? 'IPC out' : 'IPC in';
-        break;
-      default:
-    }
-  }
-  return category;
 }
 
 /**

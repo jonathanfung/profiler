@@ -8,7 +8,7 @@ import {
   TIMELINE_MARGIN_LEFT,
   TIMELINE_MARGIN_RIGHT,
 } from '../../app-logic/constants';
-import JsTracer from '../../components/js-tracer';
+import { JsTracer } from '../../components/js-tracer';
 import { render } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import mockCanvasContext from '../fixtures/mocks/canvas-context';
@@ -20,7 +20,10 @@ import {
   removeRootOverlayElement,
   fireFullClick,
 } from '../fixtures/utils';
-import { getProfileWithJsTracerEvents } from '../fixtures/profiles/processed-profile';
+import {
+  getProfileWithJsTracerEvents,
+  type TestDefinedJsTracerEvent,
+} from '../fixtures/profiles/processed-profile';
 import { getShowJsTracerSummary } from '../../selectors/url-state';
 jest.useFakeTimers();
 
@@ -38,7 +41,7 @@ describe('StackChart', function() {
     events,
   }: {
     skipLoadingScreen: boolean,
-    events: Array<*>,
+    events: TestDefinedJsTracerEvent[],
   }) {
     const flushRafCalls = mockRaf();
     const ctx = mockCanvasContext();

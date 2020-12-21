@@ -95,7 +95,6 @@ export type Marker = {|
   start: Milliseconds,
   end: Milliseconds | null,
   name: string,
-  title: string | null,
   category: IndexIntoCategoryList,
   data: MarkerPayload,
   incomplete?: boolean,
@@ -132,6 +131,7 @@ export type CallNodeDisplayData = $Exact<
     isFrameLabel: boolean,
     categoryName: string,
     categoryColor: string,
+    iconSrc: string | null,
     icon: string | null,
     ariaLabel: string,
   }>
@@ -278,7 +278,6 @@ export type OriginsTimeline = Array<
  */
 export type ActiveTabMainTrack = {|
   type: 'tab',
-  mainThreadIndex: ThreadIndex,
   threadIndexes: Set<ThreadIndex>,
   threadsKey: ThreadsKey,
 |};
@@ -370,6 +369,7 @@ export type InitialSelectedTrackReference = HTMLElement;
  * Page data for ProfileFilterNavigator component.
  */
 export type ProfileFilterPageData = {|
+  origin: string,
   hostname: string,
   favicon: string,
 |};
@@ -393,7 +393,7 @@ export type TracedTiming = {|
  * https://searchfox.org/mozilla-central/rev/3811b11b5773c1dccfe8228bfc7143b10a9a2a99/tools/profiler/core/platform.cpp#3000-3186
  */
 export type EventDelayInfo = {|
-  +eventDelays: Milliseconds[],
+  +eventDelays: Float32Array,
   +minDelay: Milliseconds,
   +maxDelay: Milliseconds,
   +delayRange: Milliseconds,

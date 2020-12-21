@@ -6,22 +6,22 @@
 
 import * as React from 'react';
 import memoize from 'memoize-immutable';
-import explicitConnect from '../../utils/connect';
-import { assertExhaustiveCheck } from '../../utils/flow';
+import explicitConnect from 'firefox-profiler/utils/connect';
+import { assertExhaustiveCheck } from 'firefox-profiler/utils/flow';
 import {
   selectedThreadSelectors,
   selectedNodeSelectors,
-} from '../../selectors/per-thread';
-import { getSelectedThreadsKey } from '../../selectors/url-state';
-import { getCategories } from '../../selectors/profile';
-import { getFunctionName } from '../../profile-logic/function-info';
+} from 'firefox-profiler/selectors/per-thread';
+import { getSelectedThreadsKey } from 'firefox-profiler/selectors/url-state';
+import { getCategories } from 'firefox-profiler/selectors/profile';
+import { getFunctionName } from 'firefox-profiler/profile-logic/function-info';
 import {
   getFriendlyStackTypeName,
   shouldDisplaySubcategoryInfoForCategory,
-} from '../../profile-logic/profile-data';
-import CanSelectContent from './CanSelectContent';
+} from 'firefox-profiler/profile-logic/profile-data';
+import { CanSelectContent } from './CanSelectContent';
 
-import type { ConnectedProps } from '../../utils/connect';
+import type { ConnectedProps } from 'firefox-profiler/utils/connect';
 import type {
   ThreadsKey,
   CategoryList,
@@ -37,14 +37,14 @@ import type {
   BreakdownByCategory,
   StackImplementation,
   TimingsForPath,
-} from '../../profile-logic/profile-data';
+} from 'firefox-profiler/profile-logic/profile-data';
 import {
   formatMilliseconds,
   formatPercent,
   formatBytes,
   formatNumber,
   ratioToCssPercent,
-} from '../../utils/format-numbers';
+} from 'firefox-profiler/utils/format-numbers';
 import classNames from 'classnames';
 
 type SidebarDetailProps = {|
@@ -301,7 +301,7 @@ function getWeightTypeLabel(weightType: WeightType): string {
   }
 }
 
-class CallTreeSidebar extends React.PureComponent<Props> {
+class CallTreeSidebarImpl extends React.PureComponent<Props> {
   _getWeightTypeDetails = memoize(
     (weightType: WeightType): WeightDetails => {
       switch (weightType) {
@@ -348,7 +348,9 @@ class CallTreeSidebar extends React.PureComponent<Props> {
     if (selectedNodeIndex === null) {
       return (
         <div className="sidebar sidebar-calltree">
-          Select a node to display some information about it.
+          <div className="sidebar-contents-wrapper">
+            Select a node to display some information about it.
+          </div>
         </div>
       );
     }
@@ -462,7 +464,7 @@ class CallTreeSidebar extends React.PureComponent<Props> {
   }
 }
 
-export default explicitConnect<{||}, StateProps, {||}>({
+export const CallTreeSidebar = explicitConnect<{||}, StateProps, {||}>({
   mapStateToProps: state => ({
     selectedNodeIndex: selectedThreadSelectors.getSelectedCallNodeIndex(state),
     callNodeTable: selectedThreadSelectors.getCallNodeInfo(state).callNodeTable,
@@ -474,5 +476,5 @@ export default explicitConnect<{||}, StateProps, {||}>({
     weightType: selectedThreadSelectors.getWeightTypeForCallTree(state),
     tracedTiming: selectedThreadSelectors.getTracedTiming(state),
   }),
-  component: CallTreeSidebar,
+  component: CallTreeSidebarImpl,
 });

@@ -7,7 +7,10 @@
 import * as React from 'react';
 import classNames from 'classnames';
 
-import { tabsWithTitle, type TabSlug } from '../../app-logic/tabs-handling';
+import {
+  tabsWithTitle,
+  type TabSlug,
+} from 'firefox-profiler/app-logic/tabs-handling';
 
 import './TabBar.css';
 
@@ -19,7 +22,7 @@ type Props = {|
   +extraElements?: React.Node,
 |};
 
-class TabBar extends React.PureComponent<Props> {
+export class TabBar extends React.PureComponent<Props> {
   _onClickListener = (e: SyntheticMouseEvent<HTMLElement>) => {
     this.props.onSelectTab(e.currentTarget.dataset.name);
   };
@@ -81,5 +84,3 @@ class TabBar extends React.PureComponent<Props> {
     );
   }
 }
-
-export default TabBar;

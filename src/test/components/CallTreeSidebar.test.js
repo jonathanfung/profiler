@@ -8,7 +8,7 @@ import * as React from 'react';
 import { Provider } from 'react-redux';
 import { render } from '@testing-library/react';
 
-import CallTreeSidebar from '../../components/sidebar/CallTreeSidebar';
+import { CallTreeSidebar } from '../../components/sidebar/CallTreeSidebar';
 import {
   changeSelectedCallNode,
   changeInvertCallstack,
@@ -183,7 +183,7 @@ describe('CallTreeSidebar', function() {
     const layoutCategory = getByText('Layout');
     fireFullClick(layoutCategory);
 
-    getByText('FakeSubCategoryC');
+    expect(getByText('FakeSubCategoryC')).toBeTruthy();
 
     expect(container.firstChild).toMatchSnapshot();
   });

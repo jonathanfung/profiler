@@ -191,6 +191,7 @@ describe('unfiltered call tree', function() {
       E  G
     `);
     const callTree = callTreeFromProfile(profile);
+
     it('computes an unfiltered call tree', function() {
       expect(formatTree(callTree)).toEqual([
         '- A (total: 3, self: —)',
@@ -222,6 +223,7 @@ describe('unfiltered call tree', function() {
       E           G
     `);
     const callTree = callTreeFromProfile(profile);
+
     it('computes an unfiltered call tree', function() {
       expect(formatTreeIncludeCategories(callTree)).toEqual([
         '- A [Other] (total: 3, self: —)',
@@ -323,6 +325,7 @@ describe('unfiltered call tree', function() {
           ariaLabel:
             'A, running count is 3 samples (100%), self count is 0 samples',
           isFrameLabel: true,
+          iconSrc: null,
           icon: null,
           lib: '',
           name: 'A',
@@ -338,6 +341,7 @@ describe('unfiltered call tree', function() {
           ariaLabel:
             'I, running count is 1 sample (33%), self count is 1 sample',
           isFrameLabel: false,
+          iconSrc: null,
           icon: null,
           lib: 'libI.so',
           name: 'I',

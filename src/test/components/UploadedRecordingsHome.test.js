@@ -9,22 +9,12 @@ import { Provider } from 'react-redux';
 import { render } from '@testing-library/react';
 
 import { UploadedRecordingsHome } from 'firefox-profiler/components/app/UploadedRecordingsHome';
-import { storeProfileData } from 'firefox-profiler/app-logic/published-profiles-store';
+import { persistUploadedProfileInformationToDb } from 'firefox-profiler/app-logic/uploaded-profiles-db';
 import { blankStore } from '../fixtures/stores';
 import { mockDate } from '../fixtures/mocks/date';
 
-import 'fake-indexeddb/auto';
-import FDBFactory from 'fake-indexeddb/lib/FDBFactory';
-
-function resetIndexedDb() {
-  // This is the recommended way to reset the IDB state between test runs, but
-  // neither flow nor eslint like that we assign to indexedDB directly, for
-  // different reasons.
-  /* $FlowExpectError */ /* eslint-disable-next-line no-global-assign */
-  indexedDB = new FDBFactory();
-}
-beforeEach(resetIndexedDb);
-afterEach(resetIndexedDb);
+import { autoMockIndexedDB } from 'firefox-profiler/test/fixtures/mocks/indexeddb';
+autoMockIndexedDB();
 
 describe('UploadedRecordingsHome', () => {
   function setup() {
@@ -36,9 +26,10 @@ describe('UploadedRecordingsHome', () => {
     );
     return renderResult;
   }
+
   it('matches a snapshot when there is no published profiles', async () => {
     const { container, findByText } = setup();
-    await findByText(/No profile has been published/);
+    await findByText(/No profile has been uploaded/);
     expect(container.firstChild).toMatchSnapshot();
   });
 
@@ -49,9 +40,9 @@ describe('UploadedRecordingsHome', () => {
     mockDate('4 Jul 2020 15:00'); // Now is 4th of July, at 3pm local timezone.
 
     // 1. Add some profiles to the local indexeddb.
-    await storeProfileData({
+    await persistUploadedProfileInformationToDb({
       profileToken: '0123456789',
-      jwtToken: null,
+      jwtToken: 'FAKE_TOKEN',
       publishedDate: new Date('4 Jul 2020 14:00'), // "today" earlier
       name: '',
       preset: null,
@@ -65,7 +56,7 @@ describe('UploadedRecordingsHome', () => {
       publishedRange: { start: 1000, end: 3000 },
     });
 
-    await storeProfileData({
+    await persistUploadedProfileInformationToDb({
       profileToken: 'ABCDEFGHI',
       jwtToken: null,
       publishedDate: new Date('3 Jul 2020 08:00'), // yesterday
@@ -83,7 +74,7 @@ describe('UploadedRecordingsHome', () => {
       publishedRange: { start: 1000, end: 1005 },
     });
 
-    await storeProfileData({
+    await persistUploadedProfileInformationToDb({
       profileToken: '123abc456',
       jwtToken: null,
       publishedDate: new Date('20 May 2018'), // ancient date
@@ -103,7 +94,7 @@ describe('UploadedRecordingsHome', () => {
       publishedRange: { start: 40000, end: 40000.1 },
     });
 
-    await storeProfileData({
+    await persistUploadedProfileInformationToDb({
       profileToken: 'WINDOWS',
       jwtToken: null,
       publishedDate: new Date('4 Jul 2020 13:00'),
@@ -121,7 +112,7 @@ describe('UploadedRecordingsHome', () => {
       publishedRange: { start: 2000, end: 40000 },
     });
 
-    await storeProfileData({
+    await persistUploadedProfileInformationToDb({
       profileToken: 'MACOSX',
       jwtToken: null,
       publishedDate: new Date('5 Jul 2020 11:00'), // This is the future!

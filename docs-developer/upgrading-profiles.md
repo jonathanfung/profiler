@@ -1,6 +1,10 @@
-# Upgrading profiles
+# Profile expiration and upgrading profiles
 
-## TL;DR
+## Profile expiration
+
+The Firefox Profiler is committed to maintaining support for loading profiles for at least 3 years. After this time, we do not guarantee profile upgrading support, nor that profiles will still be available in the online profile storage. Older profiles can still be viewed and upgraded locally by checking out an older version of this project, running `yarn install` and `yarn start`, and following the getting started documentation for that checkout.
+
+## Profile upgrading TL;DR
 
 Changes to the profile format need to happen in this order:
 
@@ -9,7 +13,7 @@ Changes to the profile format need to happen in this order:
  3. Usually there needs to be a corresponding change to the "processed profile" format, which is used in [profiler.firefox.com] internally. If that's the case, the processed profile format version needs to be incremented, an upgrader for old processed profiles needs to be added, and processProfile needs to be changed to output the new version of the processed profile format.
  4. Once the [profiler.firefox.com] update is rolled out, the actual Firefox change can land.
 
-## Background
+## Background on upgrading
 
 Firefox generates profiles in a function called `StreamJSON` in [tools/profiler/core/platform.cpp](http://searchfox.org/mozilla-central/rev/7cb75d87753de9103253e34bc85592e26378f506/tools/profiler/core/platform.cpp#1259). This code is the authorative "description" of the current profile format.
 
@@ -54,12 +58,6 @@ Consequently, the same versioning concerns as for the Gecko profile format also 
 The processed profile version is stored in the field `profile.meta.preprocessedProfileVersion`, and the upgraders for processed profiles live in the file [processed-profile-versioning.js](../src/profile-logic/processed-profile-versioning.js).
 
 `processProfile` should output the latest version of the processed profile format at all times. Combined with the fact that it can treat its input as being a Gecko profile of the latest Gecko profile format version, this keeps `processProfile` uncomplicated.
-
-### The old cleopatra format
-
-The "old cleopatra format" is the profile format that was used by the cleopatra version before the big rewrite. Profiles of this format are still in the profile store, and there are links to those profiles strewn across bugzilla. We want to be able to display those profiles.
-
-We have one import path for profiles of this format, which is located in the file [old-cleopatra-profile-format.js](../src/profile-logic/old-cleopatra-profile-format.js). It outputs profiles in "processed profile format" version zero, and this output is then run through the processed profile format upgraders. This means that [old-cleopatra-profile-format.js](../src/profile-logic/old-cleopatra-profile-format.js) will not need to be touched when the processed profile format changes; the upgrader that gets added in the process will take care of things.
 
 ## Summary
 

@@ -4,7 +4,7 @@
 
 // @flow
 import { oneLine } from 'common-tags';
-import { getLastVisibleThreadTabSlug } from '../selectors/app';
+import { getLastVisibleThreadTabSlug } from 'firefox-profiler/selectors/app';
 import {
   getCounterSelectors,
   getGlobalTracks,
@@ -15,12 +15,12 @@ import {
   getPreviewSelection,
   getActiveTabGlobalTrackFromReference,
   getActiveTabResourceTrackFromReference,
-} from '../selectors/profile';
+} from 'firefox-profiler/selectors/profile';
 import {
   getThreadSelectors,
   getThreadSelectorsFromThreadsKey,
   selectedThreadSelectors,
-} from '../selectors/per-thread';
+} from 'firefox-profiler/selectors/per-thread';
 import {
   getImplementationFilter,
   getSelectedThreadIndexes,
@@ -30,16 +30,18 @@ import {
   getLocalTrackOrder,
   getSelectedTab,
   getHiddenLocalTracks,
-} from '../selectors/url-state';
+  getInvertCallstack,
+  getHash,
+} from 'firefox-profiler/selectors/url-state';
 import {
   getCallNodePathFromIndex,
   getSampleIndexToCallNodeIndex,
   getSampleCategories,
   findBestAncestorCallNode,
-} from '../profile-logic/profile-data';
-import { assertExhaustiveCheck } from '../utils/flow';
-import { sendAnalytics } from '../utils/analytics';
-import { objectShallowEquals } from '../utils/index';
+} from 'firefox-profiler/profile-logic/profile-data';
+import { assertExhaustiveCheck } from 'firefox-profiler/utils/flow';
+import { sendAnalytics } from 'firefox-profiler/utils/analytics';
+import { objectShallowEquals } from 'firefox-profiler/utils/index';
 
 import type {
   PreviewSelection,
@@ -62,7 +64,10 @@ import type {
   MarkerIndex,
   Transform,
   ThreadsKey,
+  Milliseconds,
 } from 'firefox-profiler/types';
+import { funcHasRecursiveCall } from '../profile-logic/transforms';
+import { changeStoredProfileNameInDb } from 'firefox-profiler/app-logic/uploaded-profiles-db';
 
 /**
  * This file contains actions that pertain to changing the view on the profile, including
@@ -414,7 +419,7 @@ export function selectActiveTabTrack(
     const currentlySelectedTab = getSelectedTab(getState());
     const currentlySelectedThreadIndex = getSelectedThreadIndexes(getState());
     // These get assigned based on the track type.
-    let selectedThreadIndex = null;
+    let selectedThreadIndexes;
     let selectedTab = currentlySelectedTab;
 
     switch (trackReference.type) {
@@ -428,7 +433,7 @@ export function selectActiveTabTrack(
         // Go through each type, and determine the selected slug and thread index.
         switch (globalTrack.type) {
           case 'tab': {
-            selectedThreadIndex = globalTrack.mainThreadIndex;
+            selectedThreadIndexes = new Set([...globalTrack.threadIndexes]);
             // Ensure a relevant thread-based tab is used.
             if (selectedTab === 'network-chart') {
               selectedTab = getLastVisibleThreadTabSlug(getState());
@@ -457,7 +462,7 @@ export function selectActiveTabTrack(
         switch (resourceTrack.type) {
           case 'sub-frame':
           case 'thread': {
-            selectedThreadIndex = resourceTrack.threadIndex;
+            selectedThreadIndexes = new Set([resourceTrack.threadIndex]);
             // Ensure a relevant thread-based tab is used.
             if (selectedTab === 'network-chart') {
               selectedTab = getLastVisibleThreadTabSlug(getState());
@@ -479,7 +484,9 @@ export function selectActiveTabTrack(
         );
     }
 
-    const doesNextTrackHaveSelectedTab = getThreadSelectors(selectedThreadIndex)
+    const doesNextTrackHaveSelectedTab = getThreadSelectors(
+      selectedThreadIndexes
+    )
       .getUsefulTabs(getState())
       .includes(selectedTab);
 
@@ -491,14 +498,14 @@ export function selectActiveTabTrack(
 
     if (
       currentlySelectedTab === selectedTab &&
-      currentlySelectedThreadIndex === selectedThreadIndex
+      currentlySelectedThreadIndex === selectedThreadIndexes
     ) {
       return;
     }
 
     dispatch({
       type: 'SELECT_TRACK',
-      selectedThreadIndexes: new Set([selectedThreadIndex]),
+      selectedThreadIndexes,
       selectedTab,
     });
   };
@@ -1149,7 +1156,16 @@ export function changeSelectedMarker(
     threadsKey,
   };
 }
-
+export function changeSelectedNetworkMarker(
+  threadsKey: ThreadsKey,
+  selectedNetworkMarker: MarkerIndex | null
+): Action {
+  return {
+    type: 'CHANGE_SELECTED_NETWORK_MARKER',
+    selectedNetworkMarker,
+    threadsKey,
+  };
+}
 /**
  * This action is used when the user right clicks a marker, and is especially
  * used to display its context menu.
@@ -1365,10 +1381,25 @@ export function changeTimelineType(timelineType: TimelineType): Action {
   };
 }
 
-export function changeProfileName(profileName: string | null): Action {
-  return {
-    type: 'CHANGE_PROFILE_NAME',
-    profileName,
+export function changeProfileName(
+  profileName: string | null
+): ThunkAction<Promise<void>> {
+  return async (dispatch, getState) => {
+    dispatch({
+      type: 'CHANGE_PROFILE_NAME',
+      profileName,
+    });
+
+    if (window.indexedDB) {
+      const hash = getHash(getState());
+      await changeStoredProfileNameInDb(hash, profileName || '');
+    }
+
+    sendAnalytics({
+      hitType: 'event',
+      eventCategory: 'profile',
+      eventAction: 'change profile name',
+    });
   };
 }
 
@@ -1376,5 +1407,118 @@ export function setDataSource(dataSource: DataSource): Action {
   return {
     type: 'SET_DATA_SOURCE',
     dataSource,
+  };
+}
+
+export function changeMouseTimePosition(
+  mouseTimePosition: Milliseconds | null
+): Action {
+  return {
+    type: 'CHANGE_MOUSE_TIME_POSITION',
+    mouseTimePosition,
+  };
+}
+
+export function handleCallNodeTransformShortcut(
+  event: SyntheticKeyboardEvent<>,
+  threadsKey: ThreadsKey,
+  callNodeIndex: IndexIntoCallNodeTable
+): ThunkAction<void> {
+  return (dispatch, getState) => {
+    if (event.metaKey || event.ctrlKey || event.altKey) {
+      return;
+    }
+    const threadSelectors = getThreadSelectorsFromThreadsKey(threadsKey);
+    const unfilteredThread = threadSelectors.getThread(getState());
+    const { callNodeTable } = threadSelectors.getCallNodeInfo(getState());
+    const implementation = getImplementationFilter(getState());
+    const inverted = getInvertCallstack(getState());
+    const callNodePath = getCallNodePathFromIndex(callNodeIndex, callNodeTable);
+    const funcIndex = callNodeTable.func[callNodeIndex];
+
+    switch (event.key) {
+      case 'F':
+        dispatch(
+          addTransformToStack(threadsKey, {
+            type: 'focus-subtree',
+            callNodePath: callNodePath,
+            implementation,
+            inverted,
+          })
+        );
+        break;
+      case 'f':
+        dispatch(
+          addTransformToStack(threadsKey, {
+            type: 'focus-function',
+            funcIndex,
+          })
+        );
+        break;
+      case 'M':
+        dispatch(
+          addTransformToStack(threadsKey, {
+            type: 'merge-call-node',
+            callNodePath: callNodePath,
+            implementation,
+          })
+        );
+        break;
+      case 'm':
+        dispatch(
+          addTransformToStack(threadsKey, {
+            type: 'merge-function',
+            funcIndex,
+          })
+        );
+        break;
+      case 'd':
+        dispatch(
+          addTransformToStack(threadsKey, {
+            type: 'drop-function',
+            funcIndex,
+          })
+        );
+        break;
+      case 'C': {
+        const { funcTable } = unfilteredThread;
+        const resourceIndex = funcTable.resource[funcIndex];
+        // A new collapsed func will be inserted into the table at the end. Deduce
+        // the index here.
+        const collapsedFuncIndex = funcTable.length;
+        dispatch(
+          addTransformToStack(threadsKey, {
+            type: 'collapse-resource',
+            resourceIndex,
+            collapsedFuncIndex,
+            implementation,
+          })
+        );
+        break;
+      }
+      case 'r': {
+        if (funcHasRecursiveCall(unfilteredThread, implementation, funcIndex)) {
+          dispatch(
+            addTransformToStack(threadsKey, {
+              type: 'collapse-direct-recursion',
+              funcIndex,
+              implementation,
+            })
+          );
+        }
+        break;
+      }
+      case 'c': {
+        dispatch(
+          addTransformToStack(threadsKey, {
+            type: 'collapse-function-subtree',
+            funcIndex,
+          })
+        );
+        break;
+      }
+      default:
+      // This did not match a call tree transform.
+    }
   };
 }

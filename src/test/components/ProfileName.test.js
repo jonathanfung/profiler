@@ -11,6 +11,7 @@ import { render, fireEvent } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { getProfileNameFromUrl } from 'firefox-profiler/selectors';
 import { changeProfileName } from 'firefox-profiler/actions/profile-view';
+import { withAnalyticsMock } from '../fixtures/mocks/analytics';
 
 describe('ProfileName', function() {
   const defaultName = 'Firefox – macOS 10.14';
@@ -27,6 +28,24 @@ describe('ProfileName', function() {
     if (profileName) {
       store.dispatch(changeProfileName(profileName));
     }
+    const renderResult = render(
+      <Provider store={store}>
+        <ProfileName />
+      </Provider>
+    );
+    return { ...store, ...renderResult };
+  }
+
+  function nullProfile() {
+    const { profile } = getProfileFromTextSamples('A');
+    Object.assign(profile.meta, {
+      oscpu: '',
+      platform: '',
+      toolkit: '',
+      product: '',
+    });
+
+    const store = storeWithProfile(profile);
     const renderResult = render(
       <Provider store={store}>
         <ProfileName />
@@ -63,13 +82,36 @@ describe('ProfileName', function() {
     fireEvent.change(input, { target: { value: 'Custom name' } });
     fireEvent.blur(input);
 
-    expect(queryByText('Custom name')).toBeTruthy();
+    expect(getByText('Custom name')).toBeTruthy();
     expect(getProfileNameFromUrl(getState())).toBe('Custom name');
+  });
+
+  it('sends analytics', () => {
+    withAnalyticsMock(() => {
+      const { getByText, getByDisplayValue } = setup();
+      const button = getByText(defaultName);
+      button.click();
+      const input = getByDisplayValue(defaultName);
+      fireEvent.change(input, { target: { value: 'Custom name' } });
+      fireEvent.blur(input);
+
+      expect(self.ga).toBeCalledWith('send', {
+        eventAction: 'change profile name',
+        eventCategory: 'profile',
+        hitType: 'event',
+      });
+    });
   });
 
   it('will use a url-provided profile name', function() {
     const { getByText } = setup('Custom name from URL');
 
     expect(getByText('Custom name from URL')).toBeTruthy();
+  });
+
+  it('shows UnitledProfile when profile has no name', () => {
+    const { getByText } = nullProfile();
+
+    expect(getByText('Untitled profile')).toBeTruthy();
   });
 });

@@ -7,30 +7,22 @@
 // Main use cases of storing profiles are tested in the publish flow
 // (test/store/publish.test.js). In this file we'll test more specific cases.
 
-import 'fake-indexeddb/auto';
-import FDBFactory from 'fake-indexeddb/lib/FDBFactory';
-
 import {
-  storeProfileData,
-  listAllProfileData,
-  retrieveProfileData,
-  deleteProfileData,
-  type ProfileData,
-} from 'firefox-profiler/app-logic/published-profiles-store';
+  persistUploadedProfileInformationToDb,
+  listAllUploadedProfileInformationFromDb,
+  retrieveUploadedProfileInformationFromDb,
+  deleteUploadedProfileInformationFromDb,
+  type UploadedProfileInformation,
+} from 'firefox-profiler/app-logic/uploaded-profiles-db';
 
-function resetIndexedDb() {
-  // This is the recommended way to reset the IDB state between test runs, but
-  // neither flow nor eslint like that we assign to indexedDB directly, for
-  // different reasons.
-  /* $FlowExpectError */ /* eslint-disable-next-line no-global-assign */
-  indexedDB = new FDBFactory();
-}
-beforeEach(resetIndexedDb);
-afterEach(resetIndexedDb);
+import { autoMockIndexedDB } from 'firefox-profiler/test/fixtures/mocks/indexeddb';
+autoMockIndexedDB();
 
-describe('published-profiles-store', function() {
-  async function storeGenericProfileData(overrides: $Shape<ProfileData>) {
-    const basicProfileData = {
+describe('uploaded-profiles-db', function() {
+  async function storeGenericUploadedProfileInformation(
+    overrides: $Shape<UploadedProfileInformation>
+  ) {
+    const basicUploadedProfileInformation = {
       profileToken: 'PROFILE-1',
       jwtToken: null,
       publishedDate: new Date(),
@@ -44,19 +36,22 @@ describe('published-profiles-store', function() {
       publishedRange: { start: 1000, end: 3000 },
     };
 
-    await storeProfileData({ ...basicProfileData, ...overrides });
+    await persistUploadedProfileInformationToDb({
+      ...basicUploadedProfileInformation,
+      ...overrides,
+    });
   }
 
   async function setup() {
-    await storeGenericProfileData({
+    await storeGenericUploadedProfileInformation({
       profileToken: 'PROFILE-1',
       publishedDate: new Date('2020-07-01'),
     });
-    await storeGenericProfileData({
+    await storeGenericUploadedProfileInformation({
       profileToken: 'PROFILE-2',
       publishedDate: new Date('2018-07-01'),
     });
-    await storeGenericProfileData({
+    await storeGenericUploadedProfileInformation({
       profileToken: 'PROFILE-3',
       publishedDate: new Date('2019-07-01'),
     });
@@ -65,7 +60,9 @@ describe('published-profiles-store', function() {
   it('retrieves individual profile information', async () => {
     await setup();
 
-    expect(await retrieveProfileData('PROFILE-1')).toMatchObject({
+    expect(
+      await retrieveUploadedProfileInformationFromDb('PROFILE-1')
+    ).toMatchObject({
       profileToken: 'PROFILE-1',
     });
   });
@@ -75,8 +72,8 @@ describe('published-profiles-store', function() {
     await setup();
 
     // 2. Retrieve the list and expect it's in the expected sorted order.
-    const listOfProfileData = await listAllProfileData();
-    expect(listOfProfileData).toEqual([
+    const listOfUploadedProfileInformation = await listAllUploadedProfileInformationFromDb();
+    expect(listOfUploadedProfileInformation).toEqual([
       expect.objectContaining({ profileToken: 'PROFILE-2' }),
       expect.objectContaining({ profileToken: 'PROFILE-3' }),
       expect.objectContaining({ profileToken: 'PROFILE-1' }),
@@ -86,9 +83,11 @@ describe('published-profiles-store', function() {
   it('can delete profile information', async () => {
     await setup();
 
-    await deleteProfileData('PROFILE-2');
-    expect(await retrieveProfileData('PROFILE-2')).toBe(undefined);
-    expect(await listAllProfileData()).toEqual([
+    await deleteUploadedProfileInformationFromDb('PROFILE-2');
+    expect(await retrieveUploadedProfileInformationFromDb('PROFILE-2')).toBe(
+      null
+    );
+    expect(await listAllUploadedProfileInformationFromDb()).toEqual([
       expect.objectContaining({ profileToken: 'PROFILE-3' }),
       expect.objectContaining({ profileToken: 'PROFILE-1' }),
     ]);

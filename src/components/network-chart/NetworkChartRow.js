@@ -7,7 +7,7 @@ import * as React from 'react';
 import classNames from 'classnames';
 
 import { TooltipMarker } from '../tooltip/Marker';
-import Tooltip from '../tooltip/Tooltip';
+import { Tooltip } from '../tooltip/Tooltip';
 
 import {
   guessMimeTypeFromNetworkMarker,
@@ -28,6 +28,7 @@ import type {
   Marker,
   MarkerIndex,
   NetworkPayload,
+  MixedObject,
 } from 'firefox-profiler/types';
 
 // This regexp is used to split a pathname into a directory path and a filename.
@@ -84,7 +85,7 @@ type NetworkPhaseProps = {|
   +previousName: string,
   +value: number | string,
   +duration: Milliseconds,
-  +style: Object,
+  +style: MixedObject,
 |};
 
 function NetworkPhase({
@@ -321,6 +322,9 @@ type NetworkChartRowProps = {|
   +width: CssPixels,
   +threadsKey: ThreadsKey,
   +isRightClicked: boolean,
+  +isSelected: boolean,
+  +isLeftClicked: boolean,
+  +select: MarkerIndex => mixed,
   +onLeftClick?: MarkerIndex => mixed,
   +onRightClick?: MarkerIndex => mixed,
   +shouldDisplayTooltips: () => boolean,
@@ -332,7 +336,10 @@ type State = {|
   hovered: ?boolean,
 |};
 
-class NetworkChartRow extends React.PureComponent<NetworkChartRowProps, State> {
+export class NetworkChartRow extends React.PureComponent<
+  NetworkChartRowProps,
+  State
+> {
   state = {
     pageX: 0,
     pageY: 0,
@@ -452,33 +459,44 @@ class NetworkChartRow extends React.PureComponent<NetworkChartRowProps, State> {
   render() {
     const {
       index,
+      markerIndex,
       marker,
       networkPayload,
       width,
       timeRange,
       isRightClicked,
       shouldDisplayTooltips,
+      isLeftClicked,
+      isSelected,
     } = this.props;
 
     if (networkPayload === null) {
       return null;
     }
 
+    // Generates className for a row
     const itemClassName = classNames(
       'networkChartRowItem',
       this._getClassNameTypeForMarker(),
       {
         odd: index % 2 === 1,
         isRightClicked,
+        isLeftClicked,
+        isSelected,
       }
     );
 
     return (
       <div
+        // The className below is responsible for the blue hover effect
         className={itemClassName}
         onMouseEnter={this._hoverIn}
         onMouseLeave={this._hoverOut}
         onMouseDown={this._onMouseDown}
+        aria-selected={isSelected}
+        aria-label={marker.name}
+        role="option"
+        id={`networkChartRowItem-${markerIndex}`}
       >
         <div className="networkChartRowItemLabel">
           {this._splitsURI(marker.name)}
@@ -495,6 +513,7 @@ class NetworkChartRow extends React.PureComponent<NetworkChartRowProps, State> {
           <Tooltip mouseX={this.state.pageX} mouseY={this.state.pageY + 5}>
             <TooltipMarker
               className="tooltipNetwork"
+              markerIndex={markerIndex}
               marker={marker}
               threadsKey={this.props.threadsKey}
               restrictHeightWidth={true}
@@ -505,5 +524,3 @@ class NetworkChartRow extends React.PureComponent<NetworkChartRowProps, State> {
     );
   }
 }
-
-export default NetworkChartRow;
