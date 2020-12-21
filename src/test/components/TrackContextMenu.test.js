@@ -396,13 +396,15 @@ describe('timeline/TrackContextMenu', function() {
         dispatch(changeRightClickedTrack(trackReference));
       }
 
-      const showAllTracksItem = () => queryByText('Show all tracks');
+      const maybeShowAllTracksItem = () => queryByText('Show all tracks');
+      const showAllTracksItem = () => getByText('Show all tracks');
       const globalTrackItem = () => getByText('Content Process');
       const localTrackItem = () => getByText('DOM Worker');
 
       return {
         dispatch,
         getState,
+        maybeShowAllTracksItem,
         showAllTracksItem,
         globalTrackItem,
         localTrackItem,
@@ -410,8 +412,10 @@ describe('timeline/TrackContextMenu', function() {
     }
 
     it('should not appear for a right-clicked track', function() {
-      const { showAllTracksItem } = setupTracks({ isRightClickTrack: true });
-      expect(showAllTracksItem()).toBeNull();
+      const { maybeShowAllTracksItem } = setupTracks({
+        isRightClickTrack: true,
+      });
+      expect(maybeShowAllTracksItem()).toBeNull();
     });
 
     it('should show all tracks when clicked if there are hidden tracks', function() {
